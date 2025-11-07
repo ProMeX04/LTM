@@ -24,19 +24,19 @@ public class LoadingView extends VBox {
         setAlignment(Pos.CENTER);
         setSpacing(16);
         setPadding(new Insets(32));
-        setStyle("-fx-background-color: linear-gradient(to bottom, #1e293b, #0f172a);");
+        setStyle("-fx-background-color: #0d1117;");
 
         title = new Label("Đang chuẩn bị trận đấu");
         title.setFont(Font.font("Arial", FontWeight.BOLD, 24));
-        title.setTextFill(Color.WHITE);
+        title.setTextFill(Color.web("#c9d1d9"));
 
         status = new Label("Đang tải âm thanh...");
         status.setFont(Font.font("Arial", 14));
-        status.setTextFill(Color.LIGHTGRAY);
+        status.setTextFill(Color.web("#8b949e"));
 
         currentFile = new Label("");
         currentFile.setFont(Font.font("Arial", 12));
-        currentFile.setTextFill(Color.LIGHTGRAY);
+        currentFile.setTextFill(Color.web("#8b949e"));
 
         overallProgress = new ProgressBar();
         overallProgress.setPrefWidth(500);
@@ -48,13 +48,17 @@ public class LoadingView extends VBox {
 
         cancelButton = new Button("Hủy và quay lại sảnh");
         cancelButton.setOnAction(e -> controller.leaveGame());
-        cancelButton.setStyle("-fx-background-color: #ef4444; -fx-text-fill: white; -fx-background-radius: 8; -fx-cursor: hand;");
+        cancelButton.setStyle("-fx-background-color: #21262d; -fx-text-fill: #f85149; -fx-border-color: #30363d; -fx-border-width: 1px; -fx-background-radius: 6; -fx-cursor: hand;");
+        cancelButton.setOnMouseEntered(e -> cancelButton.setStyle(
+                "-fx-background-color: #da3633; -fx-text-fill: white; -fx-border-color: #da3633; -fx-border-width: 1px; -fx-background-radius: 6; -fx-cursor: hand;"));
+        cancelButton.setOnMouseExited(e -> cancelButton.setStyle(
+                "-fx-background-color: #21262d; -fx-text-fill: #f85149; -fx-border-color: #30363d; -fx-border-width: 1px; -fx-background-radius: 6; -fx-cursor: hand;"));
 
         debugArea = new TextArea();
         debugArea.setEditable(false);
         debugArea.setPrefRowCount(8);
         debugArea.setWrapText(true);
-        debugArea.setStyle("-fx-control-inner-background:#0b1220; -fx-text-fill:#9ca3af; -fx-font-size:12px;");
+        debugArea.setStyle("-fx-control-inner-background:#0d1117; -fx-text-fill:#8b949e; -fx-font-size:12px; -fx-background-color: #161b22; -fx-border-color: #30363d;");
 
         getChildren().addAll(title, status, currentFile, overallProgress, fileProgress, debugArea, cancelButton);
 

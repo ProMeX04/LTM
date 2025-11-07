@@ -46,6 +46,18 @@ public class ClientApplication extends Application {
         loadingScene = new Scene(loadingView, 800, 500);
         gameOverScene = new Scene(gameOverView, 1200, 700);
 
+        // Apply CSS stylesheet for GitHub dark theme globally
+        try {
+            String cssPath = ClientApplication.class.getResource("/github-dark.css").toExternalForm();
+            loginScene.getStylesheets().add(cssPath);
+            lobbyScene.getStylesheets().add(cssPath);
+            gameScene.getStylesheets().add(cssPath);
+            loadingScene.getStylesheets().add(cssPath);
+            gameOverScene.getStylesheets().add(cssPath);
+        } catch (Exception e) {
+            System.err.println("Could not load CSS file: " + e.getMessage());
+        }
+
         // Setup navigation callbacks
         setupNavigation();
 

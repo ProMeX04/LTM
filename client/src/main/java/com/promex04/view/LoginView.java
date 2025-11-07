@@ -5,7 +5,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
@@ -26,41 +25,33 @@ public class LoginView extends VBox {
         setAlignment(Pos.CENTER);
         setSpacing(12);
         setPadding(new Insets(24));
-        setStyle("-fx-background-color: linear-gradient(to bottom, #667eea 0%, #764ba2 100%);");
 
         // Title
         Label titleLabel = new Label("Game Đoán Âm Thanh");
         titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 24));
-        titleLabel.setTextFill(Color.WHITE);
-        titleLabel.setStyle("-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 3);");
-
-        // Không hiển thị ô nhập IP/Port trên giao diện đăng nhập
+        titleLabel.getStyleClass().add("title");
 
         // Username field
         Label usernameLabel = new Label("Tên đăng nhập:");
         usernameLabel.setFont(Font.font("Arial", 14));
-        usernameLabel.setTextFill(Color.WHITE);
 
         usernameField = new TextField();
         usernameField.setPromptText("Nhập tên đăng nhập");
         usernameField.setPrefWidth(240);
         usernameField.setPrefHeight(34);
-        usernameField.setStyle("-fx-font-size: 13px; -fx-background-radius: 5px;");
 
         // Password field
         Label passwordLabel = new Label("Mật khẩu:");
         passwordLabel.setFont(Font.font("Arial", 14));
-        passwordLabel.setTextFill(Color.WHITE);
 
         passwordField = new PasswordField();
         passwordField.setPromptText("Nhập mật khẩu");
         passwordField.setPrefWidth(240);
         passwordField.setPrefHeight(34);
-        passwordField.setStyle("-fx-font-size: 13px; -fx-background-radius: 5px;");
 
         // Error label
         errorLabel = new Label();
-        errorLabel.setTextFill(Color.YELLOW);
+        errorLabel.setStyle("-fx-text-fill: #f85149;");
         errorLabel.setFont(Font.font("Arial", 11));
         errorLabel.setVisible(false);
 
@@ -68,35 +59,14 @@ public class LoginView extends VBox {
         loginButton = new Button("Đăng nhập");
         loginButton.setPrefWidth(110);
         loginButton.setPrefHeight(36);
-        loginButton.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; " +
-                "-fx-background-color: #4CAF50; -fx-text-fill: white; " +
-                "-fx-background-radius: 5px; -fx-cursor: hand;");
-        loginButton.setOnMouseEntered(e -> loginButton.setStyle(
-                "-fx-font-size: 14px; -fx-font-weight: bold; " +
-                        "-fx-background-color: #45a049; -fx-text-fill: white; " +
-                        "-fx-background-radius: 5px; -fx-cursor: hand;"));
-        loginButton.setOnMouseExited(e -> loginButton.setStyle(
-                "-fx-font-size: 14px; -fx-font-weight: bold; " +
-                        "-fx-background-color: #4CAF50; -fx-text-fill: white; " +
-                        "-fx-background-radius: 5px; -fx-cursor: hand;"));
-
+        loginButton.getStyleClass().add("primary");
         loginButton.setOnAction(e -> handleLogin());
 
         // Register button
         registerButton = new Button("Đăng ký");
         registerButton.setPrefWidth(110);
         registerButton.setPrefHeight(36);
-        registerButton.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; " +
-                "-fx-background-color: #2196F3; -fx-text-fill: white; " +
-                "-fx-background-radius: 5px; -fx-cursor: hand;");
-        registerButton.setOnMouseEntered(e -> registerButton.setStyle(
-                "-fx-font-size: 14px; -fx-font-weight: bold; " +
-                        "-fx-background-color: #1976D2; -fx-text-fill: white; " +
-                        "-fx-background-radius: 5px; -fx-cursor: hand;"));
-        registerButton.setOnMouseExited(e -> registerButton.setStyle(
-                "-fx-font-size: 14px; -fx-font-weight: bold; " +
-                        "-fx-background-color: #2196F3; -fx-text-fill: white; " +
-                        "-fx-background-radius: 5px; -fx-cursor: hand;"));
+        registerButton.getStyleClass().add("secondary");
 
         registerButton.setOnAction(e -> handleRegister());
 
@@ -115,7 +85,11 @@ public class LoginView extends VBox {
         formBox.getChildren().addAll(titleLabel);
 
         formBox.getChildren().addAll(
-                new Region() { { setPrefHeight(10); } },
+                new Region() {
+                    {
+                        setPrefHeight(10);
+                    }
+                },
                 usernameLabel,
                 usernameField,
                 passwordLabel,

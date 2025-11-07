@@ -19,20 +19,20 @@ import jakarta.annotation.PreDestroy;
 @Service
 public class SocketServerService implements ApplicationRunner {
     private static final Logger logger = LoggerFactory.getLogger(SocketServerService.class);
-    
+
     private final ClientManager clientManager;
     private final UserService userService;
     private final GameService gameService;
     private final BinaryTransferService binaryTransferService;
-    
+
     @Value("${game.server.port:8888}")
     private int serverPort;
-    
+
     private ServerSocket serverSocket;
     private boolean running = false;
 
     @Autowired
-    public SocketServerService(ClientManager clientManager, UserService userService, 
+    public SocketServerService(ClientManager clientManager, UserService userService,
             GameService gameService, BinaryTransferService binaryTransferService) {
         this.clientManager = clientManager;
         this.userService = userService;
@@ -52,7 +52,7 @@ public class SocketServerService implements ApplicationRunner {
             serverSocket.setReceiveBufferSize(256 * 1024); // 256KB receive buffer
             running = true;
             logger.info("Socket Server đã khởi động trên port: {}", serverPort);
-            
+
             // Bắt đầu thread chấp nhận kết nối
             new Thread(this::acceptConnections).start();
         } catch (IOException e) {
@@ -64,25 +64,24 @@ public class SocketServerService implements ApplicationRunner {
         while (running) {
             try {
                 Socket clientSocket = serverSocket.accept();
-                
+
                 // Tối ưu socket options để tăng tốc độ
                 clientSocket.setTcpNoDelay(true); // Tắt Nagle algorithm để giảm latency
                 clientSocket.setReceiveBufferSize(256 * 1024); // 256KB receive buffer
                 clientSocket.setSendBufferSize(256 * 1024); // 256KB send buffer
-                
+
                 logger.info("Client kết nối từ: {}", clientSocket.getRemoteSocketAddress());
-                
+
                 // Tạo ClientHandler với Spring DI
                 ClientHandler handler = new ClientHandler(
-                    clientSocket, 
-                    clientManager, 
-                    userService, 
-                    gameService
-                );
-                
+                        clientSocket,
+                        clientManager,
+                        userService,
+                        gameService);
+
                 // Set binary transfer service
                 handler.setBinaryTransferService(binaryTransferService);
-                
+
                 // Bắt đầu thread xử lý client
                 new Thread(handler).start();
             } catch (IOException e) {

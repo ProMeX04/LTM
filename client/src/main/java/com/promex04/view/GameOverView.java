@@ -29,12 +29,11 @@ public class GameOverView extends VBox {
         setAlignment(Pos.CENTER);
         setSpacing(30);
         setPadding(new Insets(40));
-        setStyle("-fx-background-color: linear-gradient(to bottom, #667eea 0%, #764ba2 100%);");
+        setStyle("-fx-background-color: #0d1117;");
 
         // Header
         headerLabel = new Label();
         headerLabel.setFont(Font.font("Poppins", FontWeight.BOLD, 36));
-        headerLabel.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 20, 0.3, 0, 8);");
 
         // Score section
         VBox scoreSection = createScoreSection();
@@ -42,7 +41,7 @@ public class GameOverView extends VBox {
         // Result message
         resultLabel = new Label();
         resultLabel.setFont(Font.font("Poppins", FontWeight.SEMI_BOLD, 20));
-        resultLabel.setTextFill(Color.rgb(255, 255, 255, 0.9));
+        resultLabel.setTextFill(Color.web("#c9d1d9"));
         resultLabel.setAlignment(Pos.CENTER);
         resultLabel.setWrapText(true);
         resultLabel.setMaxWidth(600);
@@ -53,17 +52,14 @@ public class GameOverView extends VBox {
         backToLobbyButton.setPrefWidth(200);
         backToLobbyButton.setPrefHeight(50);
         backToLobbyButton.setStyle(
-                "-fx-background-color: linear-gradient(to right, #22c55e, #16a34a); -fx-text-fill: white; "
-                        + "-fx-background-radius: 12px; -fx-cursor: hand; "
-                        + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 12, 0.3, 0, 6);");
+                "-fx-background-color: #238636; -fx-text-fill: white; "
+                        + "-fx-background-radius: 6px; -fx-cursor: hand;");
         backToLobbyButton.setOnMouseEntered(e -> backToLobbyButton
-                .setStyle("-fx-background-color: linear-gradient(to right, #16a34a, #15803d); -fx-text-fill: white; "
-                        + "-fx-background-radius: 12px; -fx-cursor: hand; "
-                        + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 16, 0.35, 0, 8);"));
+                .setStyle("-fx-background-color: #2ea043; -fx-text-fill: white; "
+                        + "-fx-background-radius: 6px; -fx-cursor: hand;"));
         backToLobbyButton.setOnMouseExited(e -> backToLobbyButton
-                .setStyle("-fx-background-color: linear-gradient(to right, #22c55e, #16a34a); -fx-text-fill: white; "
-                        + "-fx-background-radius: 12px; -fx-cursor: hand; "
-                        + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 12, 0.3, 0, 6);"));
+                .setStyle("-fx-background-color: #238636; -fx-text-fill: white; "
+                        + "-fx-background-radius: 6px; -fx-cursor: hand;"));
         backToLobbyButton.setOnAction(e -> {
             // Quay về lobby sẽ được xử lý bởi ClientApplication
             // Chỉ cần gọi callback hoặc để ClientApplication tự xử lý
@@ -75,13 +71,12 @@ public class GameOverView extends VBox {
     private VBox createScoreSection() {
         VBox scoreCard = new VBox(20);
         scoreCard.setAlignment(Pos.CENTER);
-        scoreCard.setStyle("-fx-background-color: rgba(15,23,42,0.7); -fx-background-radius: 20; -fx-padding: 40; "
-                + "-fx-border-color: rgba(255,255,255,0.15); -fx-border-radius: 20; "
-                + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 24, 0.3, 0, 12);");
+        scoreCard.setStyle("-fx-background-color: #161b22; -fx-background-radius: 6; -fx-padding: 40; "
+                + "-fx-border-color: #30363d; -fx-border-width: 1px; -fx-border-radius: 6;");
 
         Label scoreTitle = new Label("Điểm số cuối cùng");
         scoreTitle.setFont(Font.font("Poppins", FontWeight.SEMI_BOLD, 18));
-        scoreTitle.setTextFill(Color.rgb(200, 210, 220));
+        scoreTitle.setTextFill(Color.web("#c9d1d9"));
 
         HBox scoreDisplay = new HBox(40);
         scoreDisplay.setAlignment(Pos.CENTER);
@@ -90,20 +85,20 @@ public class GameOverView extends VBox {
         myScoreBox.setAlignment(Pos.CENTER);
         Label myLabel = new Label("Bạn");
         myLabel.setFont(Font.font("Poppins", FontWeight.MEDIUM, 16));
-        myLabel.setTextFill(Color.rgb(200, 210, 220));
+        myLabel.setTextFill(Color.web("#c9d1d9"));
         myScoreLabel = new Label("0");
         myScoreLabel.setFont(Font.font("Poppins", FontWeight.BOLD, 48));
         myScoreBox.getChildren().addAll(myLabel, myScoreLabel);
 
         Label vsLabel = new Label("VS");
         vsLabel.setFont(Font.font("Poppins", FontWeight.BOLD, 24));
-        vsLabel.setTextFill(Color.rgb(148, 163, 184));
+        vsLabel.setTextFill(Color.web("#8b949e"));
 
         VBox opponentScoreBox = new VBox(12);
         opponentScoreBox.setAlignment(Pos.CENTER);
         Label opponentLabel = new Label("Đối thủ");
         opponentLabel.setFont(Font.font("Poppins", FontWeight.MEDIUM, 16));
-        opponentLabel.setTextFill(Color.rgb(200, 210, 220));
+        opponentLabel.setTextFill(Color.web("#c9d1d9"));
         opponentScoreLabel = new Label("0");
         opponentScoreLabel.setFont(Font.font("Poppins", FontWeight.BOLD, 48));
         opponentScoreBox.getChildren().addAll(opponentLabel, opponentScoreLabel);
@@ -131,13 +126,13 @@ public class GameOverView extends VBox {
         // Cập nhật header
         if (isWin) {
             headerLabel.setText("🎉 Bạn đã thắng! 🎉");
-            headerLabel.setTextFill(Color.rgb(34, 197, 94));
+            headerLabel.setTextFill(Color.web("#3fb950"));
         } else if (isDraw) {
             headerLabel.setText("🤝 Hòa!");
-            headerLabel.setTextFill(Color.rgb(250, 204, 21));
+            headerLabel.setTextFill(Color.web("#d29922"));
         } else {
             headerLabel.setText("😔 Bạn đã thua");
-            headerLabel.setTextFill(Color.rgb(239, 68, 68));
+            headerLabel.setTextFill(Color.web("#f85149"));
         }
 
         // Cập nhật điểm số
@@ -146,14 +141,14 @@ public class GameOverView extends VBox {
 
         // Cập nhật màu điểm số
         if (isWin) {
-            myScoreLabel.setTextFill(Color.rgb(34, 197, 94));
-            opponentScoreLabel.setTextFill(Color.rgb(71, 85, 105));
+            myScoreLabel.setTextFill(Color.web("#3fb950"));
+            opponentScoreLabel.setTextFill(Color.web("#8b949e"));
         } else if (isDraw) {
-            myScoreLabel.setTextFill(Color.rgb(250, 204, 21));
-            opponentScoreLabel.setTextFill(Color.rgb(250, 204, 21));
+            myScoreLabel.setTextFill(Color.web("#d29922"));
+            opponentScoreLabel.setTextFill(Color.web("#d29922"));
         } else {
-            myScoreLabel.setTextFill(Color.rgb(71, 85, 105));
-            opponentScoreLabel.setTextFill(Color.rgb(239, 68, 68));
+            myScoreLabel.setTextFill(Color.web("#8b949e"));
+            opponentScoreLabel.setTextFill(Color.web("#f85149"));
         }
 
         // Cập nhật thông điệp kết quả
