@@ -325,6 +325,12 @@ public class GameController {
                     case "AUDIO_TAGS":
                         handleAudioTags(parts);
                         break;
+                    case "SEARCH_ARTISTS_RESULT":
+                        handleSearchArtistsResult(parts);
+                        break;
+                    case "SEARCH_GENRES_RESULT":
+                        handleSearchGenresResult(parts);
+                        break;
                     case "PONG":
                         // Phản hồi heartbeat - bỏ qua
                         break;
@@ -473,6 +479,22 @@ public class GameController {
         java.util.List<String> genres = decodeList(genresPayload);
         availableArtists.setAll(artists);
         availableGenres.setAll(genres);
+    }
+
+    private void handleSearchArtistsResult(String[] parts) {
+        String artistsPayload = parts.length >= 2 ? parts[1] : "";
+        java.util.List<String> artists = decodeList(artistsPayload);
+        Platform.runLater(() -> {
+            availableArtists.setAll(artists);
+        });
+    }
+
+    private void handleSearchGenresResult(String[] parts) {
+        String genresPayload = parts.length >= 2 ? parts[1] : "";
+        java.util.List<String> genres = decodeList(genresPayload);
+        Platform.runLater(() -> {
+            availableGenres.setAll(genres);
+        });
     }
 
     private void handleChallengeSent(String[] parts) {
@@ -1128,6 +1150,14 @@ public class GameController {
 
     public void requestAudioTags() {
         sendCommand("LIST_AUDIO_TAGS");
+    }
+
+    public void searchArtists(String keyword) {
+        sendCommand("SEARCH_ARTISTS:" + encodeComponent(keyword != null ? keyword : ""));
+    }
+
+    public void searchGenres(String keyword) {
+        sendCommand("SEARCH_GENRES:" + encodeComponent(keyword != null ? keyword : ""));
     }
 
     private String buildFilterPayload(String artist, String genre, int totalRounds) {

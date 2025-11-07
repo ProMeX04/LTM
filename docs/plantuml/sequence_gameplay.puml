@@ -1,0 +1,108 @@
+@startuml Sequence Diagram - Chơi Game (Submit Answer)
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #0066CC
+  LifeLineBorderColor #0066CC
+  LifeLineBackgroundColor #E1F5FF
+  ParticipantBorderColor #0066CC
+  ParticipantBackgroundColor #E1F5FF
+}
+
+title Sequence Diagram - Chơi Game (Submit Answer)
+
+actor "Người chơi" as Player
+participant "GameView" as GameView
+participant "GameController" as Controller
+participant "Socket" as Socket
+participant "ClientHandler" as Handler
+participant "GameService" as GameService
+participant "GameRoundRepository" as RoundRepo
+participant "GameRepository" as GameRepo
+participant "UserService" as UserService
+
+Player -> GameView: Nghe audio và chọn đáp án
+Player -> GameView: Click button option (1-4)
+GameView -> Controller: submitAnswer(answerIndex)
+Controller -> Socket: Gửi "GAME_SUBMIT:answerIndex"
+
+Socket -> Handler: Nhận message
+Handler -> Handler: handleGameSubmit(parts)
+Handler -> Handler: Tính timeMs từ roundStartTime
+
+Handler -> GameService: processRoundAnswer(round, username, answerIndex, timeMs)
+GameService -> RoundRepo: findById(roundId)
+RoundRepo --> GameService: GameRound
+
+GameService -> GameRepo: findById(gameId)
+GameRepo --> GameService: Game
+
+GameService -> GameService: Kiểm tra đã trả lời chưa
+GameService -> GameService: isCorrect(round, answerIndex)
+GameService -> GameService: calculatePoints(isCorrect, timeMs)
+
+GameService -> RoundRepo: save(round) [cập nhật answer, points]
+GameService -> GameRepo: save(game) [cập nhật score]
+GameService --> Handler: RoundResult(correct, points, timeMs)
+
+Handler -> Handler: updateScoreCaches(username, points)
+Handler -> Socket: Gửi "ROUND_RESULT:correct/wrong:points:timeMs"
+
+Socket -> Controller: Nhận ROUND_RESULT
+Controller -> Controller: handleRoundResult(parts)
+Controller -> GameView: onRoundResult callback
+
+GameView -> GameView: Hiển thị kết quả (đúng/sai)
+GameView -> GameView: Highlight đáp án đã chọn
+GameView -> GameView: Cập nhật điểm số
+
+Handler -> Handler: finishPersonalRoundAndContinue()
+Handler -> GameService: finishRound(currentRound)
+Handler -> Handler: myCompleted++, myRoundNumber++
+
+Handler -> Handler: sendPersonalizedScoreUpdate(this)
+Handler -> Socket: Gửi "SCORE_UPDATE:myScore:opponentScore"
+
+Socket -> Controller: Nhận SCORE_UPDATE
+Controller -> GameView: onScoreUpdate callback
+GameView -> GameView: updateScore()
+
+Handler -> Handler: sendProgressToSelf()
+Handler -> Socket: Gửi "PROGRESS:myProgress:opponentProgress"
+
+Socket -> Controller: Nhận PROGRESS
+Controller -> GameView: onProgressUpdate callback
+GameView -> GameView: updateProgress()
+
+alt Chưa hết game
+    Handler -> Handler: scheduler.schedule(startNextRoundFor, 1s)
+    Handler -> Handler: startNextRoundFor(this)
+    Handler -> GameService: findOrCreateRoundWithAudio(game, myRoundNumber, audio)
+    GameService --> Handler: GameRound
+    
+    Handler -> Socket: Gửi "ROUND_START:audioId||roundNumber||option1||..."
+    Socket -> Controller: Nhận ROUND_START
+    Controller -> GameView: onRoundStart callback
+    GameView -> GameView: updateRoundUI(round)
+    GameView -> GameView: playAudio(audioPath)
+    GameView -> GameView: startTimer()
+else Đã hết game
+    Handler -> Handler: myFinished = true
+    
+    alt Cả hai đã hoàn thành
+        Handler -> Handler: finishGame()
+        Handler -> GameService: finishGame(game)
+        GameService -> GameService: Xác định người thắng
+        GameService -> UserService: updateUserStats(player1, ...)
+        GameService -> UserService: updateUserStats(player2, ...)
+        GameService --> Handler: finishedGame
+        
+        Handler -> Socket: Gửi "GAME_OVER:myScore:opponentScore:winner"
+        Socket -> Controller: Nhận GAME_OVER
+        Controller -> GameView: onGameOver callback
+        GameView -> Player: Chuyển sang GameOverView
+    end
+end
+
+@enduml
+

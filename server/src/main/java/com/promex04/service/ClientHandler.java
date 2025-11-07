@@ -53,7 +53,7 @@ public class ClientHandler implements Runnable {
     private int player1ScoreCache = 0;
     private int player2ScoreCache = 0;
     // Prefetch playlist và trạng thái sẵn sàng
-    private java.util.List<Audio> myPlaylist;
+    private java.util.List<AudioSegment> myPlaylist;
     private boolean myPrefetchReady = false;
     private boolean roundsStarted = false;
     private String pendingArtist;
@@ -151,6 +151,12 @@ public class ClientHandler implements Runnable {
                     break;
                 case "LIST_AUDIO_TAGS":
                     handleAudioTagsRequest();
+                    break;
+                case "SEARCH_ARTISTS":
+                    handleSearchArtists(parts);
+                    break;
+                case "SEARCH_GENRES":
+                    handleSearchGenres(parts);
                     break;
                 case "REQUEST_AUDIO_FILE":
                     handleRequestAudioFile(parts);
@@ -363,7 +369,10 @@ public class ClientHandler implements Runnable {
             User challenger = opponentHandler.currentUser; // Người gửi CHALLENGE
             User accepter = currentUser; // Người chấp nhận
 
-            Game game = gameService.createGame(challenger, accepter);
+            String selectedArtist = resolvePendingArtist();
+            String selectedGenre = resolvePendingGenre();
+
+            Game game = gameService.createGame(challenger, accepter, selectedArtist, selectedGenre);
 
             this.currentGame = game;
             this.inGame = true;
@@ -389,11 +398,9 @@ public class ClientHandler implements Runnable {
             opponentHandler.myCompleted = 0;
             opponentHandler.myFinished = false;
 
-            String selectedArtist = resolvePendingArtist();
-            String selectedGenre = resolvePendingGenre();
-
             // Chuẩn bị playlist prefetch (giống nhau) cho cả hai theo chủ đề đã chọn
-            List<Audio> sharedPlaylist = gameService.getRandomAudios(totalRounds, selectedArtist, selectedGenre);
+            // selectedArtist và selectedGenre đã được lấy ở trên khi tạo game
+            List<AudioSegment> sharedPlaylist = gameService.getRandomAudioSegments(totalRounds, selectedArtist, selectedGenre);
             this.myPlaylist = new ArrayList<>(sharedPlaylist);
             this.myPrefetchReady = false;
             this.roundsStarted = false; // Reset flag để bắt đầu game mới
@@ -433,7 +440,7 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private String buildPrefetchMessage(java.util.List<Audio> list) {
+    private String buildPrefetchMessage(java.util.List<AudioSegment> list) {
         StringBuilder sb = new StringBuilder("PREFETCH:");
         for (int i = 0; i < list.size(); i++) {
             if (i > 0)
@@ -607,22 +614,22 @@ public class ClientHandler implements Runnable {
 
         // Tạo round mới cho target theo playlist đã chuẩn bị (fallback random nếu
         // thiếu)
-        Audio audioForRound = null;
+        AudioSegment segmentForRound = null;
         if (target.myPlaylist != null) {
             int idx = target.myRoundNumber - 1;
             if (idx >= 0 && idx < target.myPlaylist.size()) {
-                audioForRound = target.myPlaylist.get(idx);
+                segmentForRound = target.myPlaylist.get(idx);
             }
         }
-        if (audioForRound == null) {
-            audioForRound = gameService.getRandomAudio();
+        if (segmentForRound == null) {
+            segmentForRound = gameService.getRandomAudioSegment();
         }
 
         try {
-            // Sử dụng findOrCreateRoundWithAudio để đảm bảo cả hai người chơi dùng chung
+            // Sử dụng findOrCreateRoundWithSegment để đảm bảo cả hai người chơi dùng chung
             // một round
-            target.currentRound = gameService.findOrCreateRoundWithAudio(target.currentGame, target.myRoundNumber,
-                    audioForRound);
+            target.currentRound = gameService.findOrCreateRoundWithSegment(target.currentGame, target.myRoundNumber,
+                    segmentForRound);
             target.roundStartTime = LocalDateTime.now();
             logger.debug("Found/created round {} for {} (round ID: {})", target.myRoundNumber,
                     target.currentUser != null ? target.currentUser.getUsername() : "unknown",
@@ -635,13 +642,13 @@ public class ClientHandler implements Runnable {
 
         // Sử dụng delimiter "||" để tránh xung đột với dấu ':' trong option names
         String roundData = "ROUND_START:" +
-                target.currentRound.getAudio().getId() + "||" +
+                target.currentRound.getAudioSegment().getId() + "||" +
                 target.currentRound.getRoundNumber() + "||" +
                 target.currentRound.getOption1() + "||" +
                 target.currentRound.getOption2() + "||" +
                 target.currentRound.getOption3() + "||" +
                 target.currentRound.getOption4() + "||" +
-                target.currentRound.getAudio().getFilePath();
+                target.currentRound.getAudioSegment().getFilePath();
 
         logger.info("Sending ROUND_START to {}: round {}",
                 target.currentUser != null ? target.currentUser.getUsername() : "unknown",
@@ -914,6 +921,28 @@ public class ClientHandler implements Runnable {
         String artistPayload = encodeList(artists);
         String genrePayload = encodeList(genres);
         sendMessage("AUDIO_TAGS:" + artistPayload + ":" + genrePayload);
+    }
+
+    private void handleSearchArtists(String[] parts) {
+        if (currentUser == null) {
+            sendMessage("ERROR:Not logged in");
+            return;
+        }
+        String keyword = parts.length >= 2 ? decodeComponent(parts[1]) : "";
+        List<String> artists = gameService.searchArtists(keyword);
+        String artistPayload = encodeList(artists);
+        sendMessage("SEARCH_ARTISTS_RESULT:" + artistPayload);
+    }
+
+    private void handleSearchGenres(String[] parts) {
+        if (currentUser == null) {
+            sendMessage("ERROR:Not logged in");
+            return;
+        }
+        String keyword = parts.length >= 2 ? decodeComponent(parts[1]) : "";
+        List<String> genres = gameService.searchGenres(keyword);
+        String genrePayload = encodeList(genres);
+        sendMessage("SEARCH_GENRES_RESULT:" + genrePayload);
     }
 
     private void handleRequestAudioFile(String[] parts) {

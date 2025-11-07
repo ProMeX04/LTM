@@ -1,0 +1,59 @@
+@startuml Use Case - Server Module
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam usecase {
+  BackgroundColor #E1F5FF
+  BorderColor #0066CC
+}
+
+title Use Case Diagram - Server Module
+
+actor "Client" as Client
+
+package "Authentication Module" {
+  usecase "Đăng nhập" as UC_LOGIN
+  usecase "Đăng ký tài khoản" as UC_REGISTER
+  usecase "Xác thực người dùng" as UC_AUTHENTICATE
+}
+
+package "User Management Module" {
+  usecase "Quản lý thông tin người dùng" as UC_MANAGE_USER
+  usecase "Cập nhật thống kê người dùng" as UC_UPDATE_STATS
+  usecase "Lấy bảng xếp hạng" as UC_GET_RANKING
+}
+
+package "Game Management Module" {
+  usecase "Tạo game mới" as UC_CREATE_GAME
+  usecase "Xử lý thách đấu" as UC_HANDLE_CHALLENGE
+  usecase "Tạo round mới" as UC_CREATE_ROUND
+  usecase "Xử lý câu trả lời" as UC_PROCESS_ANSWER
+  usecase "Tính điểm" as UC_CALCULATE_SCORE
+  usecase "Kết thúc game" as UC_FINISH_GAME
+  usecase "Quản lý audio" as UC_MANAGE_AUDIO
+}
+
+package "Connection Management Module" {
+  usecase "Quản lý kết nối client" as UC_MANAGE_CONNECTION
+  usecase "Broadcast thông tin lobby" as UC_BROADCAST_LOBBY
+  usecase "Xử lý tin nhắn chat" as UC_HANDLE_CHAT
+  usecase "Gửi file audio" as UC_SEND_AUDIO
+}
+
+Client --> UC_LOGIN
+Client --> UC_REGISTER
+Client --> UC_MANAGE_USER
+Client --> UC_GET_RANKING
+Client --> UC_HANDLE_CHALLENGE
+Client --> UC_PROCESS_ANSWER
+Client --> UC_HANDLE_CHAT
+Client --> UC_SEND_AUDIO
+
+UC_LOGIN ..> UC_AUTHENTICATE : <<include>>
+UC_REGISTER ..> UC_MANAGE_USER : <<include>>
+UC_PROCESS_ANSWER ..> UC_CALCULATE_SCORE : <<include>>
+UC_CREATE_ROUND ..> UC_MANAGE_AUDIO : <<include>>
+UC_FINISH_GAME ..> UC_UPDATE_STATS : <<include>>
+UC_MANAGE_CONNECTION ..> UC_BROADCAST_LOBBY : <<include>>
+
+@enduml
+

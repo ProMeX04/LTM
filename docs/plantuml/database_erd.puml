@@ -1,0 +1,113 @@
+@startuml Database ERD
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam linetype ortho
+
+skinparam entity {
+  BackgroundColor #E1F5FF
+  BorderColor #0066CC
+}
+
+skinparam arrow {
+  Color #0066CC
+}
+
+title Entity Relationship Diagram - Game Đoán Âm Thanh Database
+
+entity User {
+  * id : BIGINT <<PK>>
+  --
+  * username : VARCHAR(255) <<UNIQUE>>
+  * password : VARCHAR(255)
+  * total_score : INT
+  * correct_answers : INT
+  * games_won : INT
+  * games_played : INT
+}
+
+entity Game {
+  * id : BIGINT <<PK>>
+  --
+  * player1_id : BIGINT <<FK>>
+  * player2_id : BIGINT <<FK>>
+  * player1_score : INT
+  * player2_score : INT
+  * current_round : INT
+  * status : VARCHAR(50)
+  * created_at : DATETIME
+  finished_at : DATETIME
+  winner_id : BIGINT <<FK>>
+}
+
+entity GameRound {
+  * id : BIGINT <<PK>>
+  --
+  * game_id : BIGINT <<FK>>
+  * audio_id : BIGINT <<FK>>
+  * round_number : INT
+  player1_answer : INT
+  player2_answer : INT
+  player1_time_ms : BIGINT
+  player2_time_ms : BIGINT
+  * player1_points : INT
+  * player2_points : INT
+  option1 : VARCHAR(255)
+  option2 : VARCHAR(255)
+  option3 : VARCHAR(255)
+  option4 : VARCHAR(255)
+  correct_answer : INT
+  * started_at : DATETIME
+  finished_at : DATETIME
+}
+
+entity Audio {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(255)
+  * file_path : VARCHAR(500)
+  artist : VARCHAR(255)
+  genre : VARCHAR(255)
+  album : VARCHAR(255)
+  release_year : INT
+  duration_seconds : INT
+}
+
+' Relationships
+User ||--o{ Game : "plays as player1"
+User ||--o{ Game : "plays as player2"
+User ||--o| Game : "wins"
+
+Game ||--o{ GameRound : "contains"
+Audio ||--o{ GameRound : "used in"
+
+note top of User
+  **Primary Key:** id
+  **Unique:** username
+  **Indexes:** username
+end note
+
+note top of Game
+  **Primary Key:** id
+  **Foreign Keys:**
+  - player1_id → users.id
+  - player2_id → users.id
+  - winner_id → users.id
+  **Status Values:**
+  WAITING, IN_PROGRESS, FINISHED
+end note
+
+note top of GameRound
+  **Primary Key:** id
+  **Foreign Keys:**
+  - game_id → games.id
+  - audio_id → audios.id
+  **Indexes:** game_id, round_number
+end note
+
+note top of Audio
+  **Primary Key:** id
+  **Indexes:** artist, genre
+end note
+
+@enduml
+

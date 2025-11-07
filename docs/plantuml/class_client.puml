@@ -1,0 +1,214 @@
+@startuml Class Diagram - Client Module
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #E1F5FF
+  BorderColor #0066CC
+  ArrowColor #0066CC
+}
+
+title Class Diagram - Client Module
+
+package "com.promex04.model" {
+  class User {
+    -String username
+    -Integer totalScore
+    -String status
+    +User(String username, Integer totalScore, String status)
+    +String getUsername()
+    +Integer getTotalScore()
+    +String getStatus()
+  }
+
+  class GameRound {
+    -Long audioId
+    -Integer roundNumber
+    -String option1
+    -String option2
+    -String option3
+    -String option4
+    -String audioFilePath
+    +GameRound(Long audioId, Integer roundNumber, String option1, String option2, String option3, String option4, String audioFilePath)
+    +String getOption1()
+    +String getOption2()
+    +String getOption3()
+    +String getOption4()
+    +String getAudioFilePath()
+    +Integer getRoundNumber()
+  }
+
+  class RankingEntry {
+    -Integer rank
+    -String username
+    -Integer totalScore
+    -Integer correctAnswers
+    -Integer gamesWon
+    +RankingEntry(Integer rank, String username, Integer totalScore, Integer correctAnswers, Integer gamesWon)
+  }
+}
+
+package "com.promex04.controller" {
+  class GameController {
+    -Socket socket
+    -PrintWriter out
+    -BufferedReader in
+    -String currentUsername
+    -int currentScore
+    -ObservableList<User> lobbyUsers
+    -ObservableList<String> chatMessages
+    -ObservableList<RankingEntry> rankingList
+    -GameRound currentRound
+    -int myScore
+    -int opponentScore
+    -boolean inGame
+    -Map<String, String> audioCache
+    +void connect(String serverHost, int serverPort)
+    +void login(String username, String password)
+    +void register(String username, String password)
+    +void sendChatMessage(String message)
+    +void challenge(String opponentUsername, String artist, String genre, int totalRounds)
+    +void respondToChallenge(boolean accept)
+    +void submitAnswer(int answerIndex)
+    +void leaveGame()
+    +void requestRanking()
+    +void disconnect()
+    +void logout()
+    -void listenToServer()
+    -void handleServerMessage(String message)
+  }
+
+  class BinaryTransferClient {
+    +static byte[] receiveFile(String host, int port, String filePath, long fileSize)
+  }
+}
+
+package "com.promex04.view" {
+  class ClientApplication {
+    -Stage primaryStage
+    -GameController controller
+    -LoginView loginView
+    -LobbyView lobbyView
+    -GameView gameView
+    -GameOverView gameOverView
+    -LoadingView loadingView
+    +void start(Stage primaryStage)
+    -void setupNavigation()
+    -void showLogin()
+    -void showLobby()
+    -void showGame()
+    -void showGameOver()
+  }
+
+  class LoginView {
+    -TextField usernameField
+    -PasswordField passwordField
+    -Button loginButton
+    -Button registerButton
+    -Label errorLabel
+    -GameController controller
+    +LoginView(GameController controller)
+    -void initializeUI()
+    -void handleLogin()
+    -void handleRegister()
+    +void reset()
+  }
+
+  class LobbyView {
+    -GameController controller
+    -ListView<User> userListView
+    -ListView<String> chatListView
+    -TextField chatInputField
+    -TextField searchField
+    -Button challengeButton
+    -TableView<RankingEntry> rankingTable
+    +LobbyView(GameController controller)
+    -void initializeUI()
+    -void setupCallbacks()
+    -void handleSendMessage()
+    -void handleChallenge()
+    -void handleLogout()
+    -void filterUsers(String searchText)
+  }
+
+  class GameView {
+    -GameController controller
+    -Button option1Button
+    -Button option2Button
+    -Button option3Button
+    -Button option4Button
+    -Button playAudioButton
+    -Label timerValueLabel
+    -Label audioStatusLabel
+    -Timeline timerTimeline
+    -AudioPlayer audioPlayer
+    +GameView(GameController controller)
+    -void initializeUI()
+    -void setupCallbacks()
+    -void updateRoundUI(GameRound round)
+    -void playAudio(String audioPath)
+    -void submitAnswer(int answerIndex)
+    -void updateScore()
+    -void updateProgress()
+    -void startTimer()
+    -void stopTimer()
+  }
+
+  class GameOverView {
+    -GameController controller
+    -Label resultLabel
+    -Button backToLobbyButton
+    +GameOverView(GameController controller)
+    -void initializeUI()
+    -void setupCallbacks()
+  }
+
+  class LoadingView {
+    -GameController controller
+    -ProgressBar progressBar
+    -Label statusLabel
+    -ListView<String> logListView
+    +LoadingView(GameController controller)
+    -void initializeUI()
+    -void setupCallbacks()
+  }
+}
+
+package "com.promex04.audio" {
+  class AudioPlayer {
+    -MediaPlayer mediaPlayer
+    -Runnable onPlaybackFinished
+    -Runnable onError
+    +boolean load(String source)
+    +void play()
+    +void stop()
+    +void dispose()
+    +void setOnPlaybackFinished(Runnable callback)
+    +void setOnError(Runnable callback)
+  }
+}
+
+' Relationships
+GameController --> User : manages
+GameController --> GameRound : manages
+GameController --> RankingEntry : manages
+GameController --> BinaryTransferClient : uses
+
+ClientApplication --> GameController : uses
+ClientApplication --> LoginView : manages
+ClientApplication --> LobbyView : manages
+ClientApplication --> GameView : manages
+ClientApplication --> GameOverView : manages
+ClientApplication --> LoadingView : manages
+
+LoginView --> GameController : uses
+LobbyView --> GameController : uses
+LobbyView --> User : displays
+LobbyView --> RankingEntry : displays
+GameView --> GameController : uses
+GameView --> GameRound : displays
+GameView --> AudioPlayer : uses
+GameOverView --> GameController : uses
+LoadingView --> GameController : uses
+
+@enduml
+

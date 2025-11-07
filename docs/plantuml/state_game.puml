@@ -1,0 +1,72 @@
+@startuml State Diagram - Game State
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #E1F5FF
+  BorderColor #0066CC
+  ArrowColor #0066CC
+}
+
+title State Diagram - Game State Machine
+
+[*] --> WAITING : Game created
+
+state WAITING
+note right of WAITING
+  Waiting for both players
+  to be ready
+end note
+
+WAITING --> IN_PROGRESS : Both players\nprefetch done
+
+state IN_PROGRESS {
+  state ROUND_ACTIVE
+  state ROUND_COMPLETED
+  
+  ROUND_ACTIVE --> ROUND_COMPLETED : Both players\nanswered
+  ROUND_COMPLETED --> ROUND_ACTIVE : Next round\n(if not finished)
+  ROUND_COMPLETED --> FINISHED : All rounds\ncompleted
+}
+
+note right of ROUND_ACTIVE
+  Round started
+  Timer running (15s)
+  Waiting for answers
+end note
+
+note right of ROUND_COMPLETED
+  Both players answered
+  Score calculated
+  Results sent
+end note
+
+IN_PROGRESS --> FINISHED : All rounds\ncompleted\nOR\nPlayer forfeits
+
+state FINISHED
+note right of FINISHED
+  Winner determined
+  Stats updated
+  Results sent to players
+end note
+
+FINISHED --> [*] : Game ended
+
+note right of WAITING
+  Game entity created
+  Status: WAITING
+end note
+
+note right of IN_PROGRESS
+  Status: IN_PROGRESS
+  Current round tracked
+  Scores updated per round
+end note
+
+note right of FINISHED
+  Status: FINISHED
+  Winner set
+  User stats updated
+end note
+
+@enduml
+

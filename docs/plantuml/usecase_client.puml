@@ -1,0 +1,70 @@
+@startuml Use Case - Client Module
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam usecase {
+  BackgroundColor #E1F5FF
+  BorderColor #0066CC
+}
+
+title Use Case Diagram - Client Module
+
+actor "Người chơi" as Player
+
+package "Authentication Module" {
+  usecase "Đăng nhập" as UC_LOGIN
+  usecase "Đăng ký" as UC_REGISTER
+  usecase "Đăng xuất" as UC_LOGOUT
+}
+
+package "Lobby Module" {
+  usecase "Xem danh sách người chơi" as UC_VIEW_PLAYERS
+  usecase "Tìm kiếm người chơi" as UC_SEARCH_PLAYERS
+  usecase "Xem bảng xếp hạng" as UC_VIEW_RANKING
+  usecase "Gửi tin nhắn chat" as UC_SEND_CHAT
+  usecase "Nhận tin nhắn chat" as UC_RECEIVE_CHAT
+  usecase "Thách đấu người chơi" as UC_CHALLENGE
+  usecase "Chấp nhận thách đấu" as UC_ACCEPT_CHALLENGE
+  usecase "Từ chối thách đấu" as UC_REJECT_CHALLENGE
+  usecase "Chọn chủ đề âm thanh" as UC_SELECT_THEME
+}
+
+package "Game Play Module" {
+  usecase "Bắt đầu game" as UC_START_GAME
+  usecase "Tải trước file audio" as UC_PREFETCH_AUDIO
+  usecase "Nghe âm thanh" as UC_PLAY_AUDIO
+  usecase "Chọn đáp án" as UC_SELECT_ANSWER
+  usecase "Xem kết quả round" as UC_VIEW_ROUND_RESULT
+  usecase "Xem điểm số" as UC_VIEW_SCORE
+  usecase "Xem tiến độ" as UC_VIEW_PROGRESS
+  usecase "Rời trận" as UC_LEAVE_GAME
+  usecase "Xem kết quả game" as UC_VIEW_GAME_RESULT
+}
+
+Player --> UC_LOGIN
+Player --> UC_REGISTER
+Player --> UC_LOGOUT
+Player --> UC_VIEW_PLAYERS
+Player --> UC_SEARCH_PLAYERS
+Player --> UC_VIEW_RANKING
+Player --> UC_SEND_CHAT
+Player --> UC_RECEIVE_CHAT
+Player --> UC_CHALLENGE
+Player --> UC_ACCEPT_CHALLENGE
+Player --> UC_REJECT_CHALLENGE
+Player --> UC_SELECT_THEME
+Player --> UC_START_GAME
+Player --> UC_PLAY_AUDIO
+Player --> UC_SELECT_ANSWER
+Player --> UC_VIEW_ROUND_RESULT
+Player --> UC_VIEW_SCORE
+Player --> UC_VIEW_PROGRESS
+Player --> UC_LEAVE_GAME
+Player --> UC_VIEW_GAME_RESULT
+
+UC_CHALLENGE ..> UC_SELECT_THEME : <<include>>
+UC_START_GAME ..> UC_PREFETCH_AUDIO : <<include>>
+UC_SELECT_ANSWER ..> UC_VIEW_ROUND_RESULT : <<include>>
+UC_VIEW_ROUND_RESULT ..> UC_VIEW_SCORE : <<include>>
+
+@enduml
+

@@ -1,0 +1,138 @@
+@startuml Sequence Diagram - Thách đấu và Bắt đầu Game
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #0066CC
+  LifeLineBorderColor #0066CC
+  LifeLineBackgroundColor #E1F5FF
+  ParticipantBorderColor #0066CC
+  ParticipantBackgroundColor #E1F5FF
+}
+
+title Sequence Diagram - Thách đấu và Bắt đầu Game
+
+actor "Người chơi 1" as Player1
+participant "LobbyView" as Lobby1
+participant "GameController" as Controller1
+participant "Socket" as Socket1
+participant "ClientHandler" as Handler1
+participant "ClientManager" as ClientManager
+participant "ClientHandler" as Handler2
+participant "Socket" as Socket2
+participant "GameController" as Controller2
+participant "LobbyView" as Lobby2
+actor "Người chơi 2" as Player2
+participant "GameService" as GameService
+participant "AudioRepository" as AudioRepo
+
+Player1 -> Lobby1: Chọn người chơi và chủ đề
+Lobby1 -> Lobby1: promptChallengePreference()
+Lobby1 -> Controller1: challenge(opponentUsername, artist, genre, totalRounds)
+Controller1 -> Socket1: Gửi "CHALLENGE:opponentUsername:payload"
+
+Socket1 -> Handler1: Nhận message
+Handler1 -> Handler1: handleChallenge(parts)
+Handler1 -> ClientManager: getClient(opponentUsername)
+ClientManager --> Handler1: Handler2
+
+Handler1 -> Handler1: Lưu pendingArtist, pendingGenre, totalRounds
+Handler1 -> Handler2: pendingArtist, pendingGenre, totalRounds
+Handler1 -> Socket2: Gửi "CHALLENGE_REQUEST:challengerUsername:payload"
+
+Socket2 -> Controller2: Nhận message
+Controller2 -> Controller2: handleChallengeRequest(parts)
+Controller2 -> Lobby2: onChallengeReceived callback
+Lobby2 -> Player2: Hiển thị dialog thách đấu
+
+alt Người chơi 2 chấp nhận
+    Player2 -> Lobby2: Click "Chấp nhận"
+    Lobby2 -> Controller2: respondToChallenge(true)
+    Controller2 -> Socket2: Gửi "CHALLENGE_RESPONSE:accept"
+    
+    Socket2 -> Handler2: Nhận message
+    Handler2 -> Handler2: handleChallengeResponse(parts)
+    
+    Handler2 -> GameService: createGame(challenger, accepter)
+    GameService -> GameService: Tạo Game entity
+    GameService --> Handler2: Game
+    
+    Handler2 -> Handler1: currentGame = game
+    Handler2 -> Handler2: currentGame = game
+    Handler2 -> Handler2: inGame = true
+    Handler1 -> Handler1: inGame = true
+    
+    Handler2 -> Socket1: Gửi "CHALLENGE_ACCEPTED:accepterUsername"
+    Handler2 -> Socket2: Gửi "CHALLENGE_ACCEPTED:challengerUsername"
+    
+    Handler2 -> GameService: getRandomAudios(totalRounds, artist, genre)
+    GameService -> AudioRepo: findAll()
+    AudioRepo --> GameService: List<Audio>
+    GameService -> GameService: Lọc theo artist/genre
+    GameService --> Handler2: List<Audio> playlist
+    
+    Handler1 -> Handler1: myPlaylist = playlist
+    Handler2 -> Handler2: myPlaylist = playlist
+    
+    Handler1 -> Socket1: Gửi "PREFETCH:path1;path2;..."
+    Handler2 -> Socket2: Gửi "PREFETCH:path1;path2;..."
+    
+    Socket1 -> Controller1: Nhận PREFETCH
+    Controller1 -> Controller1: handlePrefetch(parts)
+    Controller1 -> Lobby1: onPrefetchStart callback
+    Controller1 -> Controller1: Bắt đầu tải file
+    
+    Socket2 -> Controller2: Nhận PREFETCH
+    Controller2 -> Controller2: handlePrefetch(parts)
+    Controller2 -> Lobby2: onPrefetchStart callback
+    Controller2 -> Controller2: Bắt đầu tải file
+    
+    note over Controller1, Controller2: Tải file audio song song
+    
+    Controller1 -> Socket1: Gửi "PREFETCH_DONE"
+    Controller2 -> Socket2: Gửi "PREFETCH_DONE"
+    
+    Socket1 -> Handler1: Nhận PREFETCH_DONE
+    Socket2 -> Handler2: Nhận PREFETCH_DONE
+    
+    Handler1 -> Handler1: myPrefetchReady = true
+    Handler2 -> Handler2: myPrefetchReady = true
+    
+    alt Cả hai đã sẵn sàng
+        Handler1 -> Handler1: startNextRoundFor(this)
+        Handler2 -> Handler2: startNextRoundFor(this)
+        
+        Handler1 -> GameService: findOrCreateRoundWithAudio(game, 1, audio)
+        Handler2 -> GameService: findOrCreateRoundWithAudio(game, 1, audio)
+        GameService -> GameService: Tạo GameRound với 4 options
+        GameService --> Handler1: GameRound
+        GameService --> Handler2: GameRound
+        
+        Handler1 -> Socket1: Gửi "ROUND_START:audioId||roundNumber||option1||..."
+        Handler2 -> Socket2: Gửi "ROUND_START:audioId||roundNumber||option1||..."
+        
+        Socket1 -> Controller1: Nhận ROUND_START
+        Controller1 -> Lobby1: onGameReady callback
+        Lobby1 -> Player1: Chuyển sang GameView
+        
+        Socket2 -> Controller2: Nhận ROUND_START
+        Controller2 -> Lobby2: onGameReady callback
+        Lobby2 -> Player2: Chuyển sang GameView
+    end
+    
+    Handler2 -> ClientManager: broadcastLobbyUpdate()
+else Người chơi 2 từ chối
+    Player2 -> Lobby2: Click "Từ chối"
+    Lobby2 -> Controller2: respondToChallenge(false)
+    Controller2 -> Socket2: Gửi "CHALLENGE_RESPONSE:reject"
+    
+    Socket2 -> Handler2: Nhận message
+    Handler2 -> Socket1: Gửi "CHALLENGE_REJECTED:opponentUsername"
+    Handler2 -> Socket2: Gửi "CHALLENGE_REJECTED:challengerUsername"
+    
+    Socket1 -> Controller1: Nhận CHALLENGE_REJECTED
+    Controller1 -> Lobby1: onChallengeRejected callback
+    Lobby1 -> Player1: Hiển thị thông báo từ chối
+end
+
+@enduml
+

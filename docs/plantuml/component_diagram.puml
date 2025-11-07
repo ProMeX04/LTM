@@ -1,0 +1,50 @@
+@startuml Component Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #E1F5FF
+  BorderColor #0066CC
+  ArrowColor #0066CC
+}
+
+title Component Diagram - Game Đoán Âm Thanh
+
+package "Client Application" {
+  component [JavaFX UI] as UI
+  component [Game Controller] as Controller
+  component [Client Models] as ClientModels
+  component [Audio Player] as AudioPlayer
+}
+
+package "Server Application" {
+  component [Socket Server] as SocketServer
+  component [Business Logic] as BusinessLogic
+  component [Data Access] as DataAccess
+  component [Server Models] as ServerModels
+}
+
+database "MySQL Database" as Database
+
+UI --> Controller : uses
+Controller --> ClientModels : manages
+Controller --> AudioPlayer : uses
+Controller --> SocketServer : communicates via\nSocket (port 8888)
+
+SocketServer --> BusinessLogic : delegates to
+BusinessLogic --> DataAccess : uses
+DataAccess --> ServerModels : manages
+DataAccess --> Database : persists to
+
+SocketServer --> BusinessLogic : uses for\nfile transfer
+
+note right of SocketServer
+  Text-based protocol
+  Format: COMMAND:payload1:payload2
+end note
+
+note right of BusinessLogic
+  Binary file transfer
+  Separate port for audio files
+end note
+
+@enduml

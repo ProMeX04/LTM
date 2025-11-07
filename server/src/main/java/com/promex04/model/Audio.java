@@ -5,6 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "audios")
 @Data
@@ -19,20 +22,16 @@ public class Audio {
     private String name;
 
     @Column(name = "file_path", nullable = false)
-    private String filePath;
+    private String filePath; // Đường dẫn đến file audio gốc
 
-    @Column
-    private String artist;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "artist_id")
+    private Artist artist;
 
-    @Column
-    private String genre;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "genre_id")
+    private Genre genre;
 
-    @Column
-    private String album;
-
-    @Column(name = "release_year")
-    private Integer releaseYear;
-
-    @Column(name = "duration_seconds")
-    private Integer durationSeconds;
+    @OneToMany(mappedBy = "audio", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AudioSegment> segments = new ArrayList<>();
 }

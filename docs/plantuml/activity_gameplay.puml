@@ -1,0 +1,80 @@
+@startuml Activity Diagram - Gameplay Flow
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+  BackgroundColor #E1F5FF
+  BorderColor #0066CC
+  ArrowColor #0066CC
+}
+
+title Activity Diagram - Gameplay Flow
+
+start
+
+: Player accepts challenge;
+: Server creates Game;
+: Server generates playlist;
+: Server sends PREFETCH list;
+
+partition "Client Prefetch" {
+  : Receive PREFETCH list;
+  : For each audio file;
+  : Request file from server;
+  : Receive binary data;
+  : Save to cache;
+  : Send PREFETCH_DONE;
+}
+
+: Wait for both players\nprefetch complete;
+
+partition "Game Rounds" {
+  : Initialize round counter;
+  while (More rounds?) is (yes)
+    : Server selects audio from playlist;
+    : Server creates GameRound\nwith 4 options;
+    : Server sends ROUND_START;
+    
+    partition "Player Action" {
+      : Display round UI;
+      : Play audio;
+      : Start 15s timer;
+      
+      if (Player selects answer?) then (yes)
+        : Submit answer;
+        : Stop timer;
+        : Calculate time taken;
+      else (timeout)
+        : Auto-submit wrong answer;
+        : Time = 15000ms;
+      endif
+    }
+    
+    : Server processes answer;
+    : Calculate points\n(0-5s: 100, 5-10s: 50, 10-15s: 20);
+    : Update game scores;
+    : Send ROUND_RESULT;
+    : Display result to player;
+    : Update score display;
+    : Update progress;
+    : Increment round counter;
+  endwhile (no)
+}
+
+: Both players finished;
+: Server determines winner;
+: Update user statistics;
+: Send GAME_OVER;
+: Display final results;
+
+stop
+
+note right
+  Points calculation:
+  - Correct + 0-5s: 100 points
+  - Correct + 5-10s: 50 points
+  - Correct + 10-15s: 20 points
+  - Wrong/Timeout: 0 points
+end note
+
+@enduml
+

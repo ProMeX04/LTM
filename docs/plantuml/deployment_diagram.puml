@@ -1,0 +1,77 @@
+@startuml Deployment Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam node {
+  BackgroundColor #E1F5FF
+  BorderColor #0066CC
+}
+
+title Deployment Diagram - Game Đoán Âm Thanh
+
+node "Client Machine 1" as Client1 {
+  artifact "JavaFX Client" as ClientApp1 {
+    [JavaFX Runtime]
+    [Client Application]
+  }
+}
+
+node "Client Machine 2" as Client2 {
+  artifact "JavaFX Client" as ClientApp2 {
+    [JavaFX Runtime]
+    [Client Application]
+  }
+}
+
+node "Client Machine N" as ClientN {
+  artifact "JavaFX Client" as ClientAppN {
+    [JavaFX Runtime]
+    [Client Application]
+  }
+}
+
+node "Server Machine" as Server {
+  artifact "Spring Boot Server" as ServerApp {
+    [Spring Boot Runtime]
+    [Server Application]
+    [Socket Server :8888]
+    [Binary Transfer Server]
+  }
+  
+  database "MySQL Database" as DB {
+    [users]
+    [games]
+    [game_rounds]
+    [audios]
+  }
+  
+  folder "Audio Files" as AudioFiles {
+    [MP3 Files]
+  }
+}
+
+Client1 --> Server : TCP Socket\n(port 8888)
+Client1 --> Server : Binary Transfer\n(audio files)
+Client2 --> Server : TCP Socket\n(port 8888)
+Client2 --> Server : Binary Transfer\n(audio files)
+ClientN --> Server : TCP Socket\n(port 8888)
+ClientN --> Server : Binary Transfer\n(audio files)
+
+ServerApp --> DB : JDBC Connection\n(port 3306)
+ServerApp --> AudioFiles : File System Access
+
+note right of Server
+  Server Requirements:
+  - Java 17+
+  - MySQL 8.0+
+  - Network access
+end note
+
+note right of Client1
+  Client Requirements:
+  - Java 17+
+  - JavaFX Runtime
+  - Network access to server
+end note
+
+@enduml
+

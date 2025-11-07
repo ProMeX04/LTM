@@ -1,0 +1,64 @@
+@startuml Sequence Diagram - Lấy Bảng Xếp Hạng
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #0066CC
+  LifeLineBorderColor #0066CC
+  LifeLineBackgroundColor #E1F5FF
+  ParticipantBorderColor #0066CC
+  ParticipantBackgroundColor #E1F5FF
+}
+
+title Sequence Diagram - Lấy Bảng Xếp Hạng
+
+actor "Người chơi" as Player
+participant "LobbyView" as LobbyView
+participant "GameController" as Controller
+participant "Socket" as Socket
+participant "ClientHandler" as Handler
+participant "UserService" as UserService
+participant "UserRepository" as UserRepo
+participant "ClientManager" as ClientManager
+
+alt Yêu cầu từ client
+    Player -> LobbyView: Xem bảng xếp hạng
+    LobbyView -> Controller: requestRanking()
+    Controller -> Socket: Gửi "GET_RANKING"
+    
+    Socket -> Handler: Nhận message
+    Handler -> Handler: handleGetRanking()
+    Handler -> UserService: getRanking()
+    UserService -> UserRepo: findAllOrderByRanking()
+    UserRepo --> UserService: List<User>
+    UserService --> Handler: List<User>
+    
+    Handler -> Handler: Tạo message "RANKING:rank1,username1,score1,..."
+    Handler -> Socket: Gửi "RANKING:..."
+    
+    Socket -> Controller: Nhận RANKING
+    Controller -> Controller: handleRanking(parts)
+    Controller -> Controller: rankingList.setAll(entries)
+    Controller -> LobbyView: onRankingUpdate callback
+    LobbyView -> Player: Hiển thị bảng xếp hạng
+else Broadcast tự động từ server
+    note over Handler, ClientManager: Sau khi game kết thúc hoặc đăng nhập
+    
+    Handler -> ClientManager: broadcastRanking()
+    ClientManager -> UserService: getRanking()
+    UserService -> UserRepo: findAllOrderByRanking()
+    UserRepo --> UserService: List<User>
+    UserService --> ClientManager: List<User>
+    
+    ClientManager -> ClientManager: Tạo message "RANKING:..."
+    ClientManager -> Handler: sendMessage("RANKING:...")
+    
+    Handler -> Socket: Gửi "RANKING:..."
+    Socket -> Controller: Nhận RANKING
+    Controller -> Controller: handleRanking(parts)
+    Controller -> Controller: rankingList.setAll(entries)
+    Controller -> LobbyView: onRankingUpdate callback
+    LobbyView -> Player: Cập nhật bảng xếp hạng
+end
+
+@enduml
+

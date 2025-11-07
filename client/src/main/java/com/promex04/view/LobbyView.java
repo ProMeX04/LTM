@@ -18,6 +18,8 @@ import javafx.beans.property.StringProperty;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.application.Platform;
+import javafx.animation.PauseTransition;
+import javafx.util.Duration;
 import java.util.Optional;
 
 public class LobbyView extends BorderPane {
@@ -33,6 +35,7 @@ public class LobbyView extends BorderPane {
     private String currentChallenger; // người thách đấu mình (incoming)
     private final StringProperty pendingInvitee = new SimpleStringProperty(); // người mình đã mời (outgoing)
     private Label userLabel;
+    private String pendingSelectionUsername; // Lưu username được chọn để restore sau khi refresh
 
     public LobbyView(GameController controller) {
         this.controller = controller;
@@ -384,6 +387,10 @@ public class LobbyView extends BorderPane {
                 pendingInvitee.set(null);
                 sortedUsers.setComparator(getUserComparator());
                 userListView.refresh();
+                // Restore selection sau khi refresh
+                if (pendingSelectionUsername != null) {
+                    restoreSelection(pendingSelectionUsername);
+                }
             } else {
                 // Không ở trong game: đồng bộ trạng thái 'Đã mời' theo controller
                 String controllerInvitee = controller.getChallengeToUsername();
@@ -391,6 +398,10 @@ public class LobbyView extends BorderPane {
                         || (controllerInvitee != null && !controllerInvitee.equals(pendingInvitee.get()))) {
                     pendingInvitee.set(controllerInvitee);
                     userListView.refresh();
+                    // Restore selection sau khi refresh
+                    if (pendingSelectionUsername != null) {
+                        restoreSelection(pendingSelectionUsername);
+                    }
                 }
             }
         });
@@ -450,6 +461,10 @@ public class LobbyView extends BorderPane {
         controller.setOnChallengeSent(() -> {
             pendingInvitee.set(controller.getChallengeToUsername());
             userListView.refresh();
+            // Restore selection sau khi refresh
+            if (pendingSelectionUsername != null) {
+                restoreSelection(pendingSelectionUsername);
+            }
         });
 
         controller.setOnChallengeRejected(() -> {
@@ -500,14 +515,49 @@ public class LobbyView extends BorderPane {
             return;
         }
 
+        // Lưu lại username để restore selection sau khi dialog đóng và sau các lần refresh
+        String selectedUsername = selectedUser.getUsername();
+        pendingSelectionUsername = selectedUsername;
+
         ChallengePreference preference = promptChallengePreference();
         if (preference == null) {
+            // Nếu người dùng cancel dialog, restore lại selection và clear pending
+            restoreSelection(selectedUsername);
+            pendingSelectionUsername = null;
             return;
         }
 
-        controller.challenge(selectedUser.getUsername(), preference.artist(), preference.genre(),
+        controller.challenge(selectedUsername, preference.artist(), preference.genre(),
                 preference.totalRounds());
-        // Không hiển thị dialog; CHALLENGE_SENT từ server sẽ cập nhật UI "Đã mời"
+        // Không restore ngay ở đây vì CHALLENGE_SENT callback sẽ refresh và restore
+        // pendingSelectionUsername sẽ được dùng trong callback để restore
+    }
+
+    private void restoreSelection(String username) {
+        if (username == null) return;
+        // Tìm lại user trong danh sách và restore selection
+        // Sử dụng Platform.runLater với delay nhỏ để đảm bảo refresh đã hoàn tất
+        Platform.runLater(() -> {
+            // Delay nhỏ để đảm bảo refresh đã hoàn tất
+            PauseTransition pause = new PauseTransition(Duration.millis(50));
+            pause.setOnFinished(e -> {
+                // Tìm user trong danh sách
+                User userToSelect = null;
+                for (User user : sortedUsers) {
+                    if (user != null && username.equals(user.getUsername())) {
+                        userToSelect = user;
+                        break;
+                    }
+                }
+                
+                if (userToSelect != null) {
+                    userListView.getSelectionModel().select(userToSelect);
+                    // Scroll đến item được chọn để đảm bảo nó hiển thị
+                    userListView.scrollTo(userToSelect);
+                }
+            });
+            pause.play();
+        });
     }
 
     private ChallengePreference promptChallengePreference() {
@@ -533,15 +583,90 @@ public class LobbyView extends BorderPane {
             cancelButton.setCancelButton(true);
         }
 
-        ComboBox<String> artistBox = new ComboBox<>(controller.getAvailableArtists());
-        artistBox.setEditable(true);
-        artistBox.setPromptText("Ca sĩ (để trống = bất kỳ)");
-        prepareInputControl(artistBox);
-
-        ComboBox<String> genreBox = new ComboBox<>(controller.getAvailableGenres());
-        genreBox.setEditable(true);
-        genreBox.setPromptText("Thể loại (để trống = bất kỳ)");
-        prepareInputControl(genreBox);
+        // Load danh sách khi mở dialog
+        controller.requestAudioTags();
+        
+        // === CHỌN CA SĨ ===
+        Label artistLabel = new Label("Ca sĩ:");
+        artistLabel.setStyle("-fx-text-fill: #c9d1d9; -fx-font-size: 13px;");
+        
+        TextField artistSearchField = new TextField();
+        artistSearchField.setPromptText("Tìm kiếm ca sĩ...");
+        artistSearchField.setPrefHeight(32);
+        artistSearchField.getStyleClass().add("search");
+        
+        FilteredList<String> filteredArtists = new FilteredList<>(controller.getAvailableArtists(), p -> true);
+        ListView<String> artistListView = new ListView<>(filteredArtists);
+        artistListView.setPrefHeight(120);
+        artistListView.setStyle("-fx-background-insets: 0; -fx-padding: 4;");
+        
+        // Filter danh sách dựa trên ô search
+        artistSearchField.textProperty().addListener((obs, oldVal, newVal) -> {
+            String filterText = newVal != null ? newVal.toLowerCase() : "";
+            filteredArtists.setPredicate(item -> {
+                if (filterText.isEmpty()) {
+                    return true;
+                }
+                return item != null && item.toLowerCase().contains(filterText);
+            });
+        });
+        
+        // Label hiển thị giá trị đã chọn
+        Label selectedArtistLabel = new Label("Chưa chọn");
+        selectedArtistLabel.setStyle("-fx-text-fill: #58a6ff; -fx-font-size: 12px; -fx-padding: 4 0;");
+        selectedArtistLabel.setWrapText(true);
+        
+        // Cập nhật label khi chọn
+        artistListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                selectedArtistLabel.setText("Đã chọn: " + newVal);
+            } else {
+                selectedArtistLabel.setText("Chưa chọn");
+            }
+        });
+        
+        VBox artistBox = new VBox(6, artistLabel, artistSearchField, artistListView, selectedArtistLabel);
+        
+        // === CHỌN THỂ LOẠI ===
+        Label genreLabel = new Label("Thể loại:");
+        genreLabel.setStyle("-fx-text-fill: #c9d1d9; -fx-font-size: 13px;");
+        
+        TextField genreSearchField = new TextField();
+        genreSearchField.setPromptText("Tìm kiếm thể loại...");
+        genreSearchField.setPrefHeight(32);
+        genreSearchField.getStyleClass().add("search");
+        
+        FilteredList<String> filteredGenres = new FilteredList<>(controller.getAvailableGenres(), p -> true);
+        ListView<String> genreListView = new ListView<>(filteredGenres);
+        genreListView.setPrefHeight(120);
+        genreListView.setStyle("-fx-background-insets: 0; -fx-padding: 4;");
+        
+        // Filter danh sách dựa trên ô search
+        genreSearchField.textProperty().addListener((obs, oldVal, newVal) -> {
+            String filterText = newVal != null ? newVal.toLowerCase() : "";
+            filteredGenres.setPredicate(item -> {
+                if (filterText.isEmpty()) {
+                    return true;
+                }
+                return item != null && item.toLowerCase().contains(filterText);
+            });
+        });
+        
+        // Label hiển thị giá trị đã chọn
+        Label selectedGenreLabel = new Label("Chưa chọn");
+        selectedGenreLabel.setStyle("-fx-text-fill: #58a6ff; -fx-font-size: 12px; -fx-padding: 4 0;");
+        selectedGenreLabel.setWrapText(true);
+        
+        // Cập nhật label khi chọn
+        genreListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                selectedGenreLabel.setText("Đã chọn: " + newVal);
+            } else {
+                selectedGenreLabel.setText("Chưa chọn");
+            }
+        });
+        
+        VBox genreBox = new VBox(6, genreLabel, genreSearchField, genreListView, selectedGenreLabel);
 
         Spinner<Integer> roundsSpinner = new Spinner<>(5, 50, 15, 5);
         roundsSpinner.setEditable(true);
@@ -564,17 +689,21 @@ public class LobbyView extends BorderPane {
 
         VBox content = new VBox(12, artistBox, genreBox, roundsSpinner);
         content.getStyleClass().add("compact-dialog-body");
-        content.setPrefWidth(280);
+        content.setPrefWidth(350);
 
         dialog.getDialogPane().setContent(content);
-        dialog.getDialogPane().setPrefWidth(320);
+        dialog.getDialogPane().setPrefWidth(400);
+        dialog.getDialogPane().setPrefHeight(600);
 
         dialog.setResultConverter(buttonType -> {
             if (buttonType == sendButtonType) {
                 int totalRounds = roundsSpinner.getValue() != null ? roundsSpinner.getValue() : 15;
+                // Lấy giá trị từ ListView
+                String selectedArtist = artistListView.getSelectionModel().getSelectedItem();
+                String selectedGenre = genreListView.getSelectionModel().getSelectedItem();
                 return new ChallengePreference(
-                        trimToNull(artistBox.getEditor().getText()),
-                        trimToNull(genreBox.getEditor().getText()),
+                        trimToNull(selectedArtist),
+                        trimToNull(selectedGenre),
                         totalRounds);
             }
             return null;
@@ -582,11 +711,6 @@ public class LobbyView extends BorderPane {
 
         Optional<ChallengePreference> result = dialog.showAndWait();
         return result.orElse(null);
-    }
-
-    private void prepareInputControl(ComboBox<String> comboBox) {
-        comboBox.getStyleClass().add("audio-dialog-input");
-        comboBox.setMaxWidth(Double.MAX_VALUE);
     }
 
     private void prepareInputControl(Spinner<Integer> spinner) {

@@ -1,0 +1,95 @@
+@startuml Package Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam package {
+  BackgroundColor #E1F5FF
+  BorderColor #0066CC
+  ArrowColor #0066CC
+}
+
+title Package Diagram - Game Đoán Âm Thanh
+
+package "com.promex04.client" {
+  package "view" {
+    [LoginView]
+    [LobbyView]
+    [GameView]
+    [GameOverView]
+    [LoadingView]
+  }
+  
+  package "controller" {
+    [GameController]
+    [BinaryTransferClient]
+  }
+  
+  package "model" {
+    [User]
+    [GameRound]
+    [RankingEntry]
+  }
+  
+  package "audio" {
+    [AudioPlayer]
+  }
+  
+  [ClientApplication]
+  [ClientConfig]
+}
+
+package "com.promex04.server" {
+  package "model" {
+    [User]
+    [Game]
+    [GameRound]
+    [Audio]
+  }
+  
+  package "repository" {
+    [UserRepository]
+    [GameRepository]
+    [GameRoundRepository]
+    [AudioRepository]
+  }
+  
+  package "service" {
+    [UserService]
+    [GameService]
+    [ClientHandler]
+    [ClientManager]
+    [SocketServerService]
+    [BinaryTransferService]
+  }
+  
+  [ServerApplication]
+}
+
+' Dependencies
+[ClientApplication] --> [view]
+[ClientApplication] --> [controller]
+[view] --> [controller]
+[view] --> [model]
+[controller] --> [model]
+[controller] --> [audio]
+
+[ServerApplication] --> [service]
+[service] --> [repository]
+[service] --> [model]
+[repository] --> [model]
+
+[controller] ..> [service] : communicates via\nSocket protocol
+
+note right of [controller]
+  Client Controller communicates
+  with Server Services via
+  text-based Socket protocol
+end note
+
+note right of [service]
+  Server Services use
+  Repository pattern for
+  data access
+end note
+
+@enduml
+

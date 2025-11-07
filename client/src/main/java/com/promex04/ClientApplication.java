@@ -41,10 +41,10 @@ public class ClientApplication extends Application {
         // Initialize scenes once to avoid reusing roots across scenes
         loginScene = new Scene(loginView, 400, 400);
         lobbyScene = new Scene(lobbyView, 1200, 700);
-        gameScene = new Scene(gameView, 1200, 700);
+        gameScene = new Scene(gameView, 600, 600);
         loadingView = new LoadingView(controller);
         loadingScene = new Scene(loadingView, 800, 500);
-        gameOverScene = new Scene(gameOverView, 1200, 700);
+        gameOverScene = new Scene(gameOverView, 600, 600);
 
         // Apply CSS stylesheet for GitHub dark theme globally
         try {
@@ -80,25 +80,20 @@ public class ClientApplication extends Application {
             showLobby();
         });
 
-        // Khi game bắt đầu, hiển thị game view
+        // Khi game bắt đầu, hiển thị game view ngay (loading sẽ hiển thị trong
+        // GameView)
         controller.setOnGameStart(() -> {
-            // Sau khi chấp nhận thách đấu: chuyển sang màn hình tải
-            primaryStage.setScene(loadingScene);
-            primaryStage.sizeToScene();
+            javafx.application.Platform.runLater(() -> {
+                showGame();
+            });
         });
 
-        // Khi server gửi ROUND_START đầu tiên, chuyển sang game view
+        // Khi server gửi ROUND_START đầu tiên, game đã sẵn sàng (cả 2 người đã tải
+        // xong)
         controller.setOnGameReady(() -> {
             javafx.application.Platform.runLater(() -> {
-                System.out.println("[ClientApplication] onGameReady called, current scene: " + primaryStage.getScene());
-                // Chuyển sang game view nếu đang ở loading hoặc lobby
-                Scene currentScene = primaryStage.getScene();
-                if (currentScene == loadingScene || currentScene == lobbyScene) {
-                    System.out.println("[ClientApplication] Switching to game view");
-                    showGame();
-                } else {
-                    System.out.println("[ClientApplication] Not switching - already in game or other scene");
-                }
+                System.out.println("[ClientApplication] onGameReady called - game is ready");
+                // GameView sẽ tự ẩn loading overlay khi nhận được onGameReady
             });
         });
 

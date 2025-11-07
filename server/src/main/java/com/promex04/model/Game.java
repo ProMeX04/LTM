@@ -48,10 +48,15 @@ public class Game {
     @JoinColumn(name = "winner_id")
     private User winner;
 
+    @Column(name = "preferred_artist")
+    private String preferredArtist; // Ca sĩ đã chọn khi thách đấu (null = bất kỳ)
+
+    @Column(name = "preferred_genre")
+    private String preferredGenre; // Thể loại đã chọn khi thách đấu (null = bất kỳ)
+
     public enum GameStatus {
-        WAITING,    // Đang chờ cả 2 người chơi sẵn sàng
+        WAITING, // Đang chờ cả 2 người chơi sẵn sàng
         IN_PROGRESS, // Đang chơi
-        FINISHED    // Đã kết thúc
+        FINISHED // Đã kết thúc
     }
 }
-

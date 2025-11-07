@@ -1,0 +1,207 @@
+@startuml Class Diagram - Server Module
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #E1F5FF
+  BorderColor #0066CC
+  ArrowColor #0066CC
+}
+
+title Class Diagram - Server Module
+
+package "com.promex04.model" {
+  class User {
+    -Long id
+    -String username
+    -String password
+    -Integer totalScore
+    -Integer correctAnswers
+    -Integer gamesWon
+    -Integer gamesPlayed
+    +User(String username, String password)
+  }
+
+  class Game {
+    -Long id
+    -User player1
+    -User player2
+    -Integer player1Score
+    -Integer player2Score
+    -Integer currentRound
+    -GameStatus status
+    -LocalDateTime createdAt
+    -LocalDateTime finishedAt
+    -User winner
+    --
+    +enum GameStatus
+  }
+
+  class GameRound {
+    -Long id
+    -Game game
+    -Audio audio
+    -Integer roundNumber
+    -Integer player1Answer
+    -Integer player2Answer
+    -Long player1TimeMs
+    -Long player2TimeMs
+    -Integer player1Points
+    -Integer player2Points
+    -String option1
+    -String option2
+    -String option3
+    -String option4
+    -Integer correctAnswer
+    -LocalDateTime startedAt
+    -LocalDateTime finishedAt
+  }
+
+  class Audio {
+    -Long id
+    -String name
+    -String filePath
+    -String artist
+    -String genre
+    -String album
+    -Integer releaseYear
+    -Integer durationSeconds
+  }
+}
+
+package "com.promex04.repository" {
+  interface UserRepository {
+    +Optional<User> findByUsername(String username)
+    +List<User> findAllOrderByRanking()
+    +User save(User user)
+  }
+
+  interface GameRepository {
+    +Game save(Game game)
+    +Optional<Game> findById(Long id)
+  }
+
+  interface GameRoundRepository {
+    +GameRound save(GameRound round)
+    +Optional<GameRound> findById(Long id)
+    +Optional<GameRound> findByGameIdAndRoundNumber(Long gameId, Integer roundNumber)
+    +List<GameRound> findByGameId(Long gameId)
+  }
+
+  interface AudioRepository {
+    +List<Audio> findAll()
+    +Audio save(Audio audio)
+  }
+}
+
+package "com.promex04.service" {
+  class UserService {
+    -UserRepository userRepository
+    +Optional<User> authenticate(String username, String password)
+    +Optional<User> findByUsername(String username)
+    +User createUser(String username, String password)
+    +List<User> getRanking()
+    +void updateUserStats(User user, boolean won, int score, int correctAnswers)
+    +User save(User user)
+  }
+
+  class GameService {
+    -GameRepository gameRepository
+    -GameRoundRepository gameRoundRepository
+    -AudioRepository audioRepository
+    -UserService userService
+    +Game createGame(User player1, User player2)
+    +Audio getRandomAudio()
+    +List<Audio> getRandomAudios(int n, String artist, String genre)
+    +GameRound createRound(Game game, int roundNumber)
+    +GameRound findOrCreateRoundWithAudio(Game game, int roundNumber, Audio audio)
+    +RoundResult processRoundAnswer(GameRound round, String playerUsername, int answerIndex, long timeMs)
+    +boolean isRoundComplete(GameRound round)
+    +Game finishGame(Game game)
+    +Game finishGameByForfeit(Game game, User leaver)
+    --
+    +class RoundResult
+  }
+
+  class ClientHandler {
+    -Socket socket
+    -ClientManager clientManager
+    -UserService userService
+    -GameService gameService
+    -User currentUser
+    -boolean inGame
+    -Game currentGame
+    -GameRound currentRound
+    +void run()
+    -void handleMessage(String message)
+    -void handleLogin(String[] parts)
+    -void handleChallenge(String[] parts)
+    -void handleGameSubmit(String[] parts)
+    -void sendMessage(String message)
+  }
+
+  class ClientManager {
+    -Map<String, ClientHandler> connectedClients
+    -UserService userService
+    +void addClient(String username, ClientHandler handler)
+    +void removeClient(String username)
+    +ClientHandler getClient(String username)
+    +void broadcastLobbyUpdate()
+    +void broadcastRanking()
+    +void broadcastToLobby(String message)
+  }
+
+  class SocketServerService {
+    -int port
+    -ClientManager clientManager
+    -UserService userService
+    -GameService gameService
+    +void start()
+    -void acceptConnections()
+  }
+
+  class BinaryTransferService {
+    -Map<String, FileData> registeredFiles
+    -int binaryPort
+    +int registerFileForTransfer(String filePath, byte[] fileData)
+    +byte[] getFileData(String filePath)
+    --
+    +class FileData
+  }
+}
+
+' Relationships
+User "1" -- "*" Game : player1
+User "1" -- "*" Game : player2
+User "1" -- "*" Game : winner
+Game "1" -- "*" GameRound
+GameRound "1" -- "1" Audio
+
+UserRepository ..|> User : manages
+GameRepository ..|> Game : manages
+GameRoundRepository ..|> GameRound : manages
+AudioRepository ..|> Audio : manages
+
+UserService --> UserRepository : uses
+GameService --> GameRepository : uses
+GameService --> GameRoundRepository : uses
+GameService --> AudioRepository : uses
+GameService --> UserService : uses
+
+ClientHandler --> UserService : uses
+ClientHandler --> GameService : uses
+ClientHandler --> ClientManager : uses
+ClientHandler --> User : currentUser
+ClientHandler --> Game : currentGame
+ClientHandler --> GameRound : currentRound
+
+ClientManager --> ClientHandler : manages
+ClientManager --> UserService : uses
+
+SocketServerService --> ClientManager : uses
+SocketServerService --> UserService : uses
+SocketServerService --> GameService : uses
+
+BinaryTransferService --> BinaryTransferService.FileData : manages
+
+@enduml
+

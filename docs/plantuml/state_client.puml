@@ -1,0 +1,131 @@
+@startuml State Diagram - Client Application State
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #E1F5FF
+  BorderColor #0066CC
+  ArrowColor #0066CC
+}
+
+title State Diagram - Client Application State Machine
+
+[*] --> DISCONNECTED : Application start
+
+state DISCONNECTED
+note right of DISCONNECTED
+  Not connected to server
+  Show LoginView
+end note
+
+DISCONNECTED --> CONNECTING : User clicks login/register
+
+state CONNECTING
+note right of CONNECTING
+  Connecting to server
+  Socket connection
+end note
+
+CONNECTING --> LOGGED_OUT : Connection failed
+
+state LOGGED_OUT
+note right of LOGGED_OUT
+  Connected but not authenticated
+  Show LoginView
+end note
+
+LOGGED_OUT --> AUTHENTICATING : Login/Register request
+
+state AUTHENTICATING
+note right of AUTHENTICATING
+  Sending credentials
+  Waiting for response
+end note
+
+AUTHENTICATING --> LOGGED_OUT : Authentication failed
+AUTHENTICATING --> IN_LOBBY : Authentication success
+
+state IN_LOBBY
+note right of IN_LOBBY
+  Show LobbyView
+  View player list
+  Chat available
+  Can challenge players
+end note
+
+IN_LOBBY --> CHALLENGING : Send challenge
+
+state CHALLENGING
+note right of CHALLENGING
+  Challenge sent
+  Waiting for response
+end note
+
+CHALLENGING --> IN_LOBBY : Challenge rejected
+CHALLENGING --> CHALLENGED : Challenge received
+
+state CHALLENGED
+note right of CHALLENGED
+  Received challenge
+  Can accept/reject
+end note
+
+CHALLENGED --> IN_LOBBY : Reject challenge
+CHALLENGED --> PREFETCHING : Accept challenge
+
+state PREFETCHING
+note right of PREFETCHING
+  Downloading audio files
+  Show LoadingView
+  Progress tracking
+end note
+
+PREFETCHING --> IN_GAME : Prefetch complete\nAND\nOpponent ready
+
+state IN_GAME {
+  state ROUND_WAITING
+  state ROUND_PLAYING
+  state ROUND_RESULT
+  
+  ROUND_WAITING --> ROUND_PLAYING : Round started
+  ROUND_PLAYING --> ROUND_RESULT : Answer submitted\nOR\nTimeout
+  ROUND_RESULT --> ROUND_WAITING : Next round\n(if not finished)
+  ROUND_RESULT --> GAME_OVER : All rounds\ncompleted
+}
+
+note right of ROUND_WAITING
+  Waiting for round start
+end note
+
+note right of ROUND_PLAYING
+  Round active
+  Timer running
+  Audio playing
+  Can select answer
+end note
+
+note right of ROUND_RESULT
+  Answer submitted
+  Result displayed
+  Score updated
+end note
+
+IN_GAME --> GAME_OVER : All rounds\ncompleted\nOR\nLeave game
+
+state GAME_OVER
+note right of GAME_OVER
+  Show GameOverView
+  Display final results
+  Can return to lobby
+end note
+
+GAME_OVER --> IN_LOBBY : Return to lobby
+IN_LOBBY --> DISCONNECTED : Logout
+
+note right of IN_GAME
+  Async gameplay:
+  Each player progresses
+  independently
+end note
+
+@enduml
+

@@ -1,0 +1,66 @@
+@startuml Sequence Diagram - Đăng nhập
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #0066CC
+  LifeLineBorderColor #0066CC
+  LifeLineBackgroundColor #E1F5FF
+  ParticipantBorderColor #0066CC
+  ParticipantBackgroundColor #E1F5FF
+}
+
+title Sequence Diagram - Đăng nhập
+
+actor "Người chơi" as Player
+participant "LoginView" as LoginView
+participant "GameController" as Controller
+participant "Socket" as Socket
+participant "ClientHandler" as Handler
+participant "UserService" as UserService
+participant "UserRepository" as UserRepo
+participant "ClientManager" as ClientManager
+
+Player -> LoginView: Nhập username và password
+Player -> LoginView: Click "Đăng nhập"
+
+LoginView -> Controller: connect(host, port)
+Controller -> Socket: Tạo kết nối Socket
+Socket --> Controller: Kết nối thành công
+
+LoginView -> Controller: login(username, password)
+Controller -> Socket: Gửi "LOGIN:username:password"
+
+Socket -> Handler: Nhận message
+Handler -> Handler: handleLogin(parts)
+
+Handler -> UserService: authenticate(username, password)
+UserService -> UserRepo: findByUsername(username)
+UserRepo --> UserService: Optional<User>
+UserService -> UserService: Kiểm tra password
+UserService --> Handler: Optional<User>
+
+alt Đăng nhập thành công
+    Handler -> ClientManager: getClient(username)
+    ClientManager --> Handler: existingHandler (nếu có)
+    
+    alt Đã đăng nhập ở client khác
+        Handler -> existingHandler: Gửi "ERROR:Bạn đã đăng nhập ở thiết bị khác"
+        Handler -> ClientManager: removeClient(username)
+    end
+    
+    Handler -> ClientManager: addClient(username, this)
+    Handler -> Controller: Gửi "LOGIN_SUCCESS:username:totalScore"
+    Handler -> ClientManager: broadcastLobbyUpdate()
+    Handler -> ClientManager: broadcastRanking()
+    
+    Controller -> Controller: handleLoginSuccess(parts)
+    Controller -> LoginView: onLoginSuccess callback
+    LoginView -> LoginView: Chuyển sang LobbyView
+else Đăng nhập thất bại
+    Handler -> Controller: Gửi "LOGIN_FAILED:message"
+    Controller -> LoginView: onLoginFailed callback
+    LoginView -> Player: Hiển thị lỗi
+end
+
+@enduml
+

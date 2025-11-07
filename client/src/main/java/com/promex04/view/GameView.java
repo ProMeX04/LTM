@@ -39,6 +39,12 @@ public class GameView extends VBox {
     private Label timerValueLabel;
     private Label audioStatusLabel;
 
+    // Loading components
+    private VBox loadingOverlay;
+    private ProgressBar loadingProgressBar;
+    private Label loadingStatusLabel;
+    private boolean isLoading = false;
+
     private Timeline timerTimeline;
     private int remainingSeconds = 15;
     private AudioPlayer audioPlayer;
@@ -51,17 +57,14 @@ public class GameView extends VBox {
 
     private void initializeUI() {
         setAlignment(Pos.TOP_CENTER);
-        setSpacing(20);
-        setPadding(new Insets(24));
+        setSpacing(12);
+        setPadding(new Insets(16));
         setStyle("-fx-background-color: #0d1117;");
 
         // Header với progress bar cho round
         HBox header = createHeader();
 
-        // Score section với progress bars
-        VBox scoreSection = createScoreSection();
-
-        // Audio section
+        // Audio section (đã gộp score vào trong)
         VBox audioSection = createAudioSection();
 
         // Options grid
@@ -70,18 +73,54 @@ public class GameView extends VBox {
         // Status với progress indicator
         HBox statusSection = createStatusSection();
 
-        VBox rightColumn = new VBox(18, audioSection, optionsSection, statusSection);
-        rightColumn.setAlignment(Pos.TOP_CENTER);
-        rightColumn.setPrefWidth(560);
-
-        VBox leftColumn = new VBox(16, scoreSection);
-        leftColumn.setAlignment(Pos.TOP_LEFT);
-        leftColumn.setPrefWidth(280);
-
-        HBox mainContent = new HBox(24, leftColumn, rightColumn);
+        VBox mainContent = new VBox(12, audioSection, optionsSection, statusSection);
         mainContent.setAlignment(Pos.TOP_CENTER);
+        mainContent.setPrefWidth(600);
 
-        getChildren().addAll(header, mainContent);
+        // Loading overlay
+        loadingOverlay = createLoadingOverlay();
+
+        // Sử dụng StackPane để overlay phủ lên toàn bộ nội dung
+        StackPane contentStack = new StackPane();
+        VBox contentBox = new VBox(12, header, mainContent);
+        contentBox.setAlignment(Pos.TOP_CENTER);
+        contentStack.getChildren().addAll(contentBox, loadingOverlay);
+
+        getChildren().addAll(contentStack);
+    }
+
+    private VBox createLoadingOverlay() {
+        VBox overlay = new VBox(16);
+        overlay.setAlignment(Pos.CENTER);
+        overlay.setStyle("-fx-background-color: rgba(13, 17, 23, 0.95); -fx-background-radius: 6; -fx-padding: 32;");
+        overlay.setVisible(false);
+        overlay.setManaged(false);
+        // Đặt overlay để phủ toàn bộ StackPane
+        overlay.setMaxWidth(Double.MAX_VALUE);
+        overlay.setMaxHeight(Double.MAX_VALUE);
+        StackPane.setAlignment(overlay, Pos.CENTER);
+
+        loadingStatusLabel = new Label("Đang tải âm thanh...");
+        loadingStatusLabel.setFont(Font.font("Poppins", FontWeight.SEMI_BOLD, 16));
+        loadingStatusLabel.setTextFill(Color.web("#c9d1d9"));
+        loadingStatusLabel.setAlignment(Pos.CENTER);
+
+        loadingProgressBar = new ProgressBar();
+        loadingProgressBar.setPrefWidth(400);
+        loadingProgressBar.setPrefHeight(8);
+        loadingProgressBar.setProgress(ProgressBar.INDETERMINATE_PROGRESS);
+        loadingProgressBar.setStyle("-fx-accent: #238636;");
+
+        Button cancelButton = new Button("Hủy và quay lại sảnh");
+        cancelButton.setOnAction(e -> controller.leaveGame());
+        cancelButton.setStyle("-fx-background-color: #21262d; -fx-text-fill: #f85149; -fx-border-color: #30363d; -fx-border-width: 1px; -fx-background-radius: 6; -fx-cursor: hand; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 8 16;");
+        cancelButton.setOnMouseEntered(e -> cancelButton.setStyle(
+                "-fx-background-color: #da3633; -fx-text-fill: white; -fx-border-color: #da3633; -fx-border-width: 1px; -fx-background-radius: 6; -fx-cursor: hand; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 8 16;"));
+        cancelButton.setOnMouseExited(e -> cancelButton.setStyle(
+                "-fx-background-color: #21262d; -fx-text-fill: #f85149; -fx-border-color: #30363d; -fx-border-width: 1px; -fx-background-radius: 6; -fx-cursor: hand; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 8 16;"));
+
+        overlay.getChildren().addAll(loadingStatusLabel, loadingProgressBar, cancelButton);
+        return overlay;
     }
 
     private HBox createHeader() {
@@ -90,10 +129,10 @@ public class GameView extends VBox {
 
         // Timer chỉ có label, không có progress bar
         timerValueLabel = new Label("15s");
-        timerValueLabel.setFont(Font.font("Poppins", FontWeight.BOLD, 24));
+        timerValueLabel.setFont(Font.font("Poppins", FontWeight.BOLD, 20));
         timerValueLabel.setTextFill(Color.web("#d29922"));
         timerValueLabel
-                .setStyle("-fx-background-color: #161b22; -fx-background-radius: 6; -fx-padding: 8 16; "
+                .setStyle("-fx-background-color: #161b22; -fx-background-radius: 6; -fx-padding: 6 12; "
                         + "-fx-border-color: #30363d; -fx-border-width: 1px; -fx-border-radius: 6;");
 
         Button exitButton = new Button("Rời trận");
@@ -115,91 +154,89 @@ public class GameView extends VBox {
         return header;
     }
 
-    private VBox createScoreSection() {
-        VBox scoreCard = new VBox(12);
-        scoreCard.setAlignment(Pos.TOP_LEFT);
-        scoreCard.setStyle("-fx-background-color: #161b22; -fx-background-radius: 6; -fx-padding: 20;"
-                + "-fx-border-color: #30363d; -fx-border-width: 1px; -fx-border-radius: 6;");
-
-        // Row 1: My player info
-        HBox myRow = new HBox(16);
-        myRow.setAlignment(Pos.CENTER_LEFT);
-
-        myPlayerNameLabel = new Label("Bạn");
-        myPlayerNameLabel.setFont(Font.font("Poppins", FontWeight.SEMI_BOLD, 16));
-        myPlayerNameLabel.setTextFill(Color.web("#c9d1d9"));
-        myPlayerNameLabel.setPrefWidth(80);
-
-        myCurrentRoundLabel = new Label("Câu 0");
-        myCurrentRoundLabel.setFont(Font.font("Poppins", FontWeight.NORMAL, 14));
-        myCurrentRoundLabel.setTextFill(Color.web("#8b949e"));
-        myCurrentRoundLabel.setPrefWidth(60);
-
-        myScoreValueLabel = new Label("0");
-        myScoreValueLabel.setFont(Font.font("Poppins", FontWeight.BOLD, 18));
-        myScoreValueLabel.setTextFill(Color.web("#3fb950"));
-        HBox.setHgrow(myScoreValueLabel, Priority.ALWAYS);
-
-        myRow.getChildren().addAll(myPlayerNameLabel, myCurrentRoundLabel, myScoreValueLabel);
-
-        // Row 2: Opponent player info
-        HBox opponentRow = new HBox(16);
-        opponentRow.setAlignment(Pos.CENTER_LEFT);
-
-        opponentPlayerNameLabel = new Label("Đối thủ");
-        opponentPlayerNameLabel.setFont(Font.font("Poppins", FontWeight.SEMI_BOLD, 16));
-        opponentPlayerNameLabel.setTextFill(Color.web("#c9d1d9"));
-        opponentPlayerNameLabel.setPrefWidth(80);
-
-        opponentCurrentRoundLabel = new Label("Câu 0");
-        opponentCurrentRoundLabel.setFont(Font.font("Poppins", FontWeight.NORMAL, 14));
-        opponentCurrentRoundLabel.setTextFill(Color.web("#8b949e"));
-        opponentCurrentRoundLabel.setPrefWidth(60);
-
-        opponentScoreValueLabel = new Label("0");
-        opponentScoreValueLabel.setFont(Font.font("Poppins", FontWeight.BOLD, 18));
-        opponentScoreValueLabel.setTextFill(Color.web("#f85149"));
-        HBox.setHgrow(opponentScoreValueLabel, Priority.ALWAYS);
-
-        opponentRow.getChildren().addAll(opponentPlayerNameLabel, opponentCurrentRoundLabel, opponentScoreValueLabel);
-
-        scoreCard.getChildren().addAll(myRow, opponentRow);
-
-        return scoreCard;
-    }
 
     private VBox createAudioSection() {
-        VBox audioCard = new VBox(14);
-        audioCard.setAlignment(Pos.TOP_LEFT);
-        audioCard.setStyle("-fx-background-color: #161b22; -fx-background-radius: 6; -fx-padding: 20; "
+        VBox audioCard = new VBox(12);
+        audioCard.setAlignment(Pos.TOP_CENTER);
+        audioCard.setStyle("-fx-background-color: #161b22; -fx-background-radius: 6; -fx-padding: 16; "
                 + "-fx-border-color: #30363d; -fx-border-width: 1px; -fx-border-radius: 6;");
 
+        // Audio status và button
         audioStatusLabel = new Label("Đang chờ...");
-        audioStatusLabel.setFont(Font.font("Poppins", FontWeight.NORMAL, 13));
+        audioStatusLabel.setFont(Font.font("Poppins", FontWeight.NORMAL, 12));
         audioStatusLabel.setTextFill(Color.web("#c9d1d9"));
         audioStatusLabel.setWrapText(true);
+        audioStatusLabel.setAlignment(Pos.CENTER);
 
         playAudioButton = new Button("Nghe lại");
         playAudioButton
                 .setStyle("-fx-background-color: #238636; -fx-text-fill: white;"
-                        + "-fx-background-radius: 6px; -fx-cursor: hand; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 10 20;");
+                        + "-fx-background-radius: 6px; -fx-cursor: hand; -fx-font-size: 11px; -fx-font-weight: bold; -fx-padding: 8 16;");
         playAudioButton.setOnMouseEntered(e -> playAudioButton.setStyle(
                 "-fx-background-color: #2ea043; -fx-text-fill: white;"
-                        + "-fx-background-radius: 6px; -fx-cursor: hand; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 10 20;"));
+                        + "-fx-background-radius: 6px; -fx-cursor: hand; -fx-font-size: 11px; -fx-font-weight: bold; -fx-padding: 8 16;"));
         playAudioButton.setOnMouseExited(e -> playAudioButton.setStyle(
                 "-fx-background-color: #238636; -fx-text-fill: white;"
-                        + "-fx-background-radius: 6px; -fx-cursor: hand; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 10 20;"));
+                        + "-fx-background-radius: 6px; -fx-cursor: hand; -fx-font-size: 11px; -fx-font-weight: bold; -fx-padding: 8 16;"));
         playAudioButton.setOnAction(e -> replayAudio());
 
-        audioCard.getChildren().addAll(audioStatusLabel, playAudioButton);
+        // Score section (gộp vào đây)
+        VBox scoreSection = new VBox(8);
+        scoreSection.setAlignment(Pos.CENTER);
+
+        // Row 1: My player info
+        HBox myRow = new HBox(12);
+        myRow.setAlignment(Pos.CENTER);
+
+        myPlayerNameLabel = new Label("Bạn");
+        myPlayerNameLabel.setFont(Font.font("Poppins", FontWeight.SEMI_BOLD, 13));
+        myPlayerNameLabel.setTextFill(Color.web("#c9d1d9"));
+        myPlayerNameLabel.setPrefWidth(60);
+
+        myCurrentRoundLabel = new Label("Câu 0");
+        myCurrentRoundLabel.setFont(Font.font("Poppins", FontWeight.NORMAL, 12));
+        myCurrentRoundLabel.setTextFill(Color.web("#8b949e"));
+        myCurrentRoundLabel.setPrefWidth(50);
+
+        myScoreValueLabel = new Label("0");
+        myScoreValueLabel.setFont(Font.font("Poppins", FontWeight.BOLD, 15));
+        myScoreValueLabel.setTextFill(Color.web("#3fb950"));
+        myScoreValueLabel.setPrefWidth(40);
+
+        myRow.getChildren().addAll(myPlayerNameLabel, myCurrentRoundLabel, myScoreValueLabel);
+
+        // Row 2: Opponent player info
+        HBox opponentRow = new HBox(12);
+        opponentRow.setAlignment(Pos.CENTER);
+
+        opponentPlayerNameLabel = new Label("Đối thủ");
+        opponentPlayerNameLabel.setFont(Font.font("Poppins", FontWeight.SEMI_BOLD, 13));
+        opponentPlayerNameLabel.setTextFill(Color.web("#c9d1d9"));
+        opponentPlayerNameLabel.setPrefWidth(60);
+
+        opponentCurrentRoundLabel = new Label("Câu 0");
+        opponentCurrentRoundLabel.setFont(Font.font("Poppins", FontWeight.NORMAL, 12));
+        opponentCurrentRoundLabel.setTextFill(Color.web("#8b949e"));
+        opponentCurrentRoundLabel.setPrefWidth(50);
+
+        opponentScoreValueLabel = new Label("0");
+        opponentScoreValueLabel.setFont(Font.font("Poppins", FontWeight.BOLD, 15));
+        opponentScoreValueLabel.setTextFill(Color.web("#f85149"));
+        opponentScoreValueLabel.setPrefWidth(40);
+
+        opponentRow.getChildren().addAll(opponentPlayerNameLabel, opponentCurrentRoundLabel, opponentScoreValueLabel);
+
+        scoreSection.getChildren().addAll(myRow, opponentRow);
+
+        audioCard.getChildren().addAll(audioStatusLabel, playAudioButton, scoreSection);
 
         return audioCard;
     }
 
     private VBox createOptionsSection() {
         GridPane optionsGrid = new GridPane();
-        optionsGrid.setHgap(16);
-        optionsGrid.setVgap(16);
+        optionsGrid.setHgap(12);
+        optionsGrid.setVgap(12);
         optionsGrid.setAlignment(Pos.CENTER);
 
         option1Button = createOptionButton("Lựa chọn 1");
@@ -217,9 +254,9 @@ public class GameView extends VBox {
         option3Button.setOnAction(e -> submitAnswer(3));
         option4Button.setOnAction(e -> submitAnswer(4));
 
-        VBox optionsCard = new VBox(14, optionsGrid);
+        VBox optionsCard = new VBox(12, optionsGrid);
         optionsCard.setAlignment(Pos.TOP_CENTER);
-        optionsCard.setStyle("-fx-background-color: #161b22; -fx-background-radius: 6; -fx-padding: 20; "
+        optionsCard.setStyle("-fx-background-color: #161b22; -fx-background-radius: 6; -fx-padding: 16; "
                 + "-fx-border-color: #30363d; -fx-border-width: 1px; -fx-border-radius: 6;");
 
         return optionsCard;
@@ -242,11 +279,11 @@ public class GameView extends VBox {
 
     private Button createOptionButton(String text) {
         Button button = new Button(text);
-        button.setPrefWidth(260);
-        button.setPrefHeight(80);
+        button.setPrefWidth(240);
+        button.setPrefHeight(70);
         button.setWrapText(true);
         button.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
-        button.setFont(Font.font("Poppins", FontWeight.SEMI_BOLD, 15));
+        button.setFont(Font.font("Poppins", FontWeight.SEMI_BOLD, 14));
         button.setStyle("-fx-background-color: #21262d; -fx-text-fill: #c9d1d9; "
                 + "-fx-background-radius: 6; -fx-cursor: hand; -fx-border-color: #30363d; -fx-border-width: 1px; -fx-border-radius: 6;");
 
@@ -265,6 +302,15 @@ public class GameView extends VBox {
         controller.setOnGameStart(() -> {
             updateScore();
             updateProgress();
+            // Khi game bắt đầu, hiển thị loading overlay
+            isLoading = true;
+            showLoadingOverlay();
+        });
+
+        controller.setOnGameReady(() -> {
+            // Khi game sẵn sàng (cả 2 người đã tải xong), ẩn loading overlay
+            isLoading = false;
+            hideLoadingOverlay();
         });
 
         controller.setOnRoundStart(() -> {
@@ -329,19 +375,28 @@ public class GameView extends VBox {
         });
 
         controller.setOnPrefetchStart(() -> {
-            statusIndicator.setVisible(true);
-            statusIndicator.setProgress(-1); // Indeterminate
-            statusLabel.setText("Đang tải âm thanh...");
+            isLoading = true;
+            showLoadingOverlay();
+            loadingStatusLabel.setText("Đang tải âm thanh...");
+            loadingProgressBar.setProgress(ProgressBar.INDETERMINATE_PROGRESS);
             playAudioButton.setDisable(true);
         });
 
-        controller.setOnPrefetchDone(() -> {
-            statusIndicator.setVisible(false);
-            if (controller.hasPrefetchFailures()) {
-                statusLabel.setText("Một số âm thanh chưa tải được");
-            } else {
-                statusLabel.setText("Sẵn sàng!");
+        controller.setOnPrefetchProgress(() -> {
+            if (isLoading) {
+                int total = Math.max(1, controller.getPrefetchTotal());
+                int done = controller.getPrefetchCompleted();
+                double progress = (double) done / (double) total;
+                loadingStatusLabel.setText(String.format("Đang tải %d/%d tệp...", done, total));
+                loadingProgressBar.setProgress(progress);
             }
+        });
+
+        controller.setOnPrefetchDone(() -> {
+            isLoading = false;
+            loadingStatusLabel.setText("Tải xong âm thanh. Đang chờ đối thủ...");
+            loadingProgressBar.setProgress(1.0);
+            // Overlay sẽ được ẩn khi game bắt đầu (onGameReady)
             playAudioButton.setDisable(false);
         });
     }
@@ -591,6 +646,17 @@ public class GameView extends VBox {
     }
 
     private Label statusLabel;
+
+    private void showLoadingOverlay() {
+        loadingOverlay.setVisible(true);
+        loadingOverlay.setManaged(true);
+        loadingOverlay.toFront();
+    }
+
+    private void hideLoadingOverlay() {
+        loadingOverlay.setVisible(false);
+        loadingOverlay.setManaged(false);
+    }
 
     private void handleLeaveMatch() {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);

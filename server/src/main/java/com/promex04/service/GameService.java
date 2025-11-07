@@ -1,9 +1,13 @@
 package com.promex04.service;
 
 import com.promex04.model.*;
+import com.promex04.repository.ArtistRepository;
 import com.promex04.repository.AudioRepository;
+import com.promex04.repository.AudioSegmentRepository;
 import com.promex04.repository.GameRepository;
 import com.promex04.repository.GameRoundRepository;
+import com.promex04.repository.GenreRepository;
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,8 +16,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,53 +23,106 @@ public class GameService {
     private final GameRepository gameRepository;
     private final GameRoundRepository gameRoundRepository;
     private final AudioRepository audioRepository;
+    private final AudioSegmentRepository audioSegmentRepository;
+    private final ArtistRepository artistRepository;
+    private final GenreRepository genreRepository;
     private final UserService userService;
 
     @Autowired
     public GameService(GameRepository gameRepository, GameRoundRepository gameRoundRepository,
-            AudioRepository audioRepository, UserService userService) {
+            AudioRepository audioRepository, AudioSegmentRepository audioSegmentRepository,
+            ArtistRepository artistRepository, GenreRepository genreRepository, UserService userService) {
         this.gameRepository = gameRepository;
         this.gameRoundRepository = gameRoundRepository;
         this.audioRepository = audioRepository;
+        this.audioSegmentRepository = audioSegmentRepository;
+        this.artistRepository = artistRepository;
+        this.genreRepository = genreRepository;
         this.userService = userService;
     }
 
     public Game createGame(User player1, User player2) {
+        return createGame(player1, player2, null, null);
+    }
+
+    public Game createGame(User player1, User player2, String preferredArtist, String preferredGenre) {
         Game game = new Game();
         game.setPlayer1(player1);
         game.setPlayer2(player2);
         game.setStatus(Game.GameStatus.IN_PROGRESS);
+        game.setPreferredArtist(preferredArtist);
+        game.setPreferredGenre(preferredGenre);
         return gameRepository.save(game);
     }
 
-    public Audio getRandomAudio() {
-        List<Audio> allAudios = audioRepository.findAll();
-        if (allAudios.isEmpty()) {
+    @Transactional(readOnly = true)
+    public AudioSegment getRandomAudioSegment() {
+        List<AudioSegment> allSegments = audioSegmentRepository.findAllWithAudio();
+        if (allSegments.isEmpty()) {
             // Tạo audio mẫu nếu chưa có
-            return createSampleAudio();
+            createSampleAudio();
+            allSegments = audioSegmentRepository.findAllWithAudio();
         }
-        Collections.shuffle(allAudios);
-        return allAudios.get(0);
+        Collections.shuffle(allSegments);
+        return allSegments.get(0);
     }
 
-    public List<Audio> getRandomAudios(int n) {
-        return getRandomAudios(n, null, null);
+    @Transactional(readOnly = true)
+    public List<AudioSegment> getRandomAudioSegments(int n) {
+        return getRandomAudioSegments(n, null, null);
     }
 
-    public List<Audio> getRandomAudios(int n, String preferredArtist, String preferredGenre) {
-        List<Audio> allAudios = new ArrayList<>(audioRepository.findAll());
-        if (allAudios.isEmpty()) {
-            // Đảm bảo có ít nhất 1 audio mẫu để không lỗi
-            allAudios.add(createSampleAudio());
+    @Transactional(readOnly = true)
+    public List<AudioSegment> getRandomAudioSegments(int n, String preferredArtist, String preferredGenre) {
+        List<AudioSegment> allSegments = audioSegmentRepository.findAllWithAudio();
+        if (allSegments.isEmpty()) {
+            // Đảm bảo có ít nhất 1 segment mẫu để không lỗi
+            createSampleAudio();
+            allSegments = audioSegmentRepository.findAllWithAudio();
         }
 
-        List<Audio> filtered = allAudios.stream()
-                .filter(audio -> matchesPreference(audio.getArtist(), preferredArtist))
-                .filter(audio -> matchesPreference(audio.getGenre(), preferredGenre))
+        // Force initialize tất cả các lazy proxy trong transaction để tránh LazyInitializationException
+        // Đảm bảo audio, artist và genre được load đầy đủ trước khi rời khỏi transaction
+        List<AudioSegment> initializedSegments = new ArrayList<>();
+        for (AudioSegment segment : allSegments) {
+            // Force load audio nếu chưa được load bằng Hibernate.initialize()
+            Audio audio = segment.getAudio();
+            if (audio != null) {
+                // Force initialize audio proxy
+                Hibernate.initialize(audio);
+                // Force initialize artist và genre proxy
+                if (audio.getArtist() != null) {
+                    Hibernate.initialize(audio.getArtist());
+                    // Truy cập name để đảm bảo được load
+                    audio.getArtist().getName();
+                }
+                if (audio.getGenre() != null) {
+                    Hibernate.initialize(audio.getGenre());
+                    // Truy cập name để đảm bảo được load
+                    audio.getGenre().getName();
+                }
+            }
+            initializedSegments.add(segment);
+        }
+
+        // Sử dụng danh sách đã được initialize để filter
+        List<AudioSegment> filtered = initializedSegments.stream()
+                .filter(segment -> {
+                    Audio audio = segment.getAudio();
+                    if (audio == null) return false;
+                    String artistName = audio.getArtist() != null ? audio.getArtist().getName() : null;
+                    return matchesPreference(artistName, preferredArtist);
+                })
+                .filter(segment -> {
+                    Audio audio = segment.getAudio();
+                    if (audio == null) return false;
+                    String genreName = audio.getGenre() != null ? audio.getGenre().getName() : null;
+                    return matchesPreference(genreName, preferredGenre);
+                })
                 .collect(Collectors.toList());
 
         if (filtered.isEmpty()) {
-            filtered = new ArrayList<>(allAudios);
+            filtered = new ArrayList<>(initializedSegments);
         }
 
         Collections.shuffle(filtered);
@@ -88,59 +143,166 @@ public class GameService {
     }
 
     private Audio createSampleAudio() {
+        // Tìm hoặc tạo artist và genre mẫu
+        Artist artist = artistRepository.findByName("Unknown Artist")
+                .orElseGet(() -> {
+                    Artist a = new Artist();
+                    a.setName("Unknown Artist");
+                    return artistRepository.save(a);
+                });
+        
+        Genre genre = genreRepository.findByName("Sample")
+                .orElseGet(() -> {
+                    Genre g = new Genre();
+                    g.setName("Sample");
+                    return genreRepository.save(g);
+                });
+        
         Audio audio = new Audio();
         audio.setName("Sample Audio");
         audio.setFilePath("/sample/audio.mp3");
-        audio.setArtist("Unknown Artist");
-        audio.setGenre("Sample");
-        audio.setAlbum("Demo Collection");
-        audio.setReleaseYear(LocalDateTime.now().getYear());
-        audio.setDurationSeconds(30);
-        return audioRepository.save(audio);
+        audio.setArtist(artist);
+        audio.setGenre(genre);
+        audio = audioRepository.save(audio);
+        
+        // Tạo segment mẫu
+        AudioSegment segment = new AudioSegment();
+        segment.setAudio(audio);
+        segment.setStartTime(0);
+        segment.setEndTime(30);
+        segment.setFilePath("/sample/audio.mp3");
+        audioSegmentRepository.save(segment);
+        
+        return audio;
     }
 
     public List<String> getDistinctArtists() {
-        Set<String> artists = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-        audioRepository.findAll().forEach(audio -> {
-            if (audio.getArtist() != null && !audio.getArtist().isBlank()) {
-                artists.add(audio.getArtist().trim());
-            }
-        });
-        return new ArrayList<>(artists);
+        return artistRepository.findAll().stream()
+                .map(Artist::getName)
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .collect(Collectors.toList());
     }
 
     public List<String> getDistinctGenres() {
-        Set<String> genres = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-        audioRepository.findAll().forEach(audio -> {
-            if (audio.getGenre() != null && !audio.getGenre().isBlank()) {
-                genres.add(audio.getGenre().trim());
-            }
-        });
-        return new ArrayList<>(genres);
+        return genreRepository.findAll().stream()
+                .map(Genre::getName)
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> searchArtists(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return getDistinctArtists();
+        }
+        return artistRepository.searchByName(keyword.trim()).stream()
+                .map(Artist::getName)
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> searchGenres(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return getDistinctGenres();
+        }
+        return genreRepository.searchByName(keyword.trim()).stream()
+                .map(Genre::getName)
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .collect(Collectors.toList());
     }
 
     public GameRound createRound(Game game, int roundNumber) {
-        Audio audio = getRandomAudio();
-        return createRoundWithAudio(game, roundNumber, audio);
+        AudioSegment segment = getRandomAudioSegment();
+        return createRoundWithSegment(game, roundNumber, segment);
     }
 
-    public GameRound createRoundWithAudio(Game game, int roundNumber, Audio audio) {
+    public GameRound createRoundWithSegment(Game game, int roundNumber, AudioSegment segment) {
         GameRound round = new GameRound();
         round.setGame(game);
-        round.setAudio(audio);
+        round.setAudioSegment(segment);
         round.setRoundNumber(roundNumber);
         round.setStartedAt(LocalDateTime.now());
 
-        // Sinh 3 đáp án nhiễu + 1 đúng từ DB
-        List<Audio> all = audioRepository.findAll();
-        // loại bỏ bản đúng
-        all.removeIf(a -> a.getId().equals(audio.getId()));
-        Collections.shuffle(all);
+        // Lấy artist và genre đã chọn từ Game (nếu có)
+        String preferredArtist = game.getPreferredArtist();
+        String preferredGenre = game.getPreferredGenre();
 
-        String correct = audio.getName();
-        String o2 = all.size() >= 1 ? all.get(0).getName() : "Lựa chọn 2";
-        String o3 = all.size() >= 2 ? all.get(1).getName() : "Lựa chọn 3";
-        String o4 = all.size() >= 3 ? all.get(2).getName() : "Lựa chọn 4";
+        // Lấy tất cả segments
+        List<AudioSegment> allSegments = audioSegmentRepository.findAllWithAudio();
+        
+        // Force initialize tất cả để tránh LazyInitializationException
+        for (AudioSegment s : allSegments) {
+            Audio audio = s.getAudio();
+            if (audio != null) {
+                Hibernate.initialize(audio);
+                if (audio.getArtist() != null) {
+                    Hibernate.initialize(audio.getArtist());
+                }
+                if (audio.getGenre() != null) {
+                    Hibernate.initialize(audio.getGenre());
+                }
+            }
+        }
+        
+        // Filter các segments để lấy đáp án nhiễu
+        List<AudioSegment> filteredSegments;
+        
+        // Kiểm tra xem có chọn artist hoặc genre không
+        boolean hasArtistFilter = preferredArtist != null && !preferredArtist.isBlank();
+        boolean hasGenreFilter = preferredGenre != null && !preferredGenre.isBlank();
+        
+        // Nếu có chọn artist/genre khi thách đấu, filter theo đó
+        if (hasArtistFilter || hasGenreFilter) {
+            filteredSegments = allSegments.stream()
+                    .filter(s -> {
+                        // Loại bỏ segment đúng
+                        if (s.getId().equals(segment.getId())) {
+                            return false;
+                        }
+                        
+                        Audio audio = s.getAudio();
+                        if (audio == null) return false;
+                        
+                        // Kiểm tra artist (nếu có chọn artist)
+                        if (hasArtistFilter && preferredArtist != null) {
+                            String audioArtistName = audio.getArtist() != null ? audio.getArtist().getName() : null;
+                            if (audioArtistName == null || !preferredArtist.equalsIgnoreCase(audioArtistName)) {
+                                return false;
+                            }
+                        }
+                        
+                        // Kiểm tra genre (nếu có chọn genre)
+                        if (hasGenreFilter && preferredGenre != null) {
+                            String audioGenreName = audio.getGenre() != null ? audio.getGenre().getName() : null;
+                            if (audioGenreName == null || !preferredGenre.equalsIgnoreCase(audioGenreName)) {
+                                return false;
+                            }
+                        }
+                        
+                        return true;
+                    })
+                    .collect(Collectors.toList());
+        } else {
+            // Nếu không chọn artist/genre, lấy ngẫu nhiên từ tất cả
+            filteredSegments = allSegments.stream()
+                    .filter(s -> !s.getId().equals(segment.getId()))
+                    .collect(Collectors.toList());
+        }
+        
+        // Nếu không có đủ segments, lấy từ tất cả (fallback)
+        if (filteredSegments.size() < 3) {
+            filteredSegments = allSegments.stream()
+                    .filter(s -> !s.getId().equals(segment.getId()))
+                    .collect(Collectors.toList());
+        }
+        
+        Collections.shuffle(filteredSegments);
+
+        String correct = segment.getAudio().getName();
+        String o2 = filteredSegments.size() >= 1 ? filteredSegments.get(0).getAudio().getName() : "Lựa chọn 2";
+        String o3 = filteredSegments.size() >= 2 ? filteredSegments.get(1).getAudio().getName() : "Lựa chọn 3";
+        String o4 = filteredSegments.size() >= 3 ? filteredSegments.get(2).getAudio().getName() : "Lựa chọn 4";
 
         // Trộn thứ tự và xác định index đúng
         java.util.List<String> options = new java.util.ArrayList<>();
@@ -167,19 +329,19 @@ public class GameService {
      * @Transactional để đảm bảo tính nhất quán khi kiểm tra và tạo round.
      */
     @Transactional
-    public GameRound findOrCreateRoundWithAudio(Game game, int roundNumber, Audio audio) {
+    public GameRound findOrCreateRoundWithSegment(Game game, int roundNumber, AudioSegment segment) {
         // Kiểm tra xem đã có round cho roundNumber này chưa
         var existingRound = gameRoundRepository.findByGameIdAndRoundNumber(game.getId(), roundNumber);
         if (existingRound.isPresent()) {
-            // Đã có round, kiểm tra xem audio có khớp không
+            // Đã có round, kiểm tra xem segment có khớp không
             GameRound round = existingRound.get();
-            if (round.getAudio().getId().equals(audio.getId())) {
+            if (round.getAudioSegment().getId().equals(segment.getId())) {
                 return round; // Dùng lại round đã có
             }
-            // Nếu audio không khớp, tạo mới (trường hợp hiếm - có thể do lỗi logic)
+            // Nếu segment không khớp, tạo mới (trường hợp hiếm - có thể do lỗi logic)
         }
         // Chưa có round, tạo mới
-        return createRoundWithAudio(game, roundNumber, audio);
+        return createRoundWithSegment(game, roundNumber, segment);
     }
 
     @Transactional

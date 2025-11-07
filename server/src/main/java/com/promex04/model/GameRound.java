@@ -22,8 +22,8 @@ public class GameRound {
     private Game game;
 
     @ManyToOne
-    @JoinColumn(name = "audio_id", nullable = false)
-    private Audio audio;
+    @JoinColumn(name = "audio_segment_id", nullable = false)
+    private AudioSegment audioSegment;
 
     @Column(name = "round_number", nullable = false)
     private Integer roundNumber;
