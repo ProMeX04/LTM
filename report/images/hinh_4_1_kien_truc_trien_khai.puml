@@ -1,0 +1,45 @@
+@startuml Kiến trúc triển khai
+!theme plain
+skinparam backgroundColor #FFFFFF
+
+package "Client Application" {
+  [LobbyView UI] as LobbyUI
+  [GameController] as Controller
+  [Socket Client] as Socket
+}
+
+package "Server Application" {
+  [Socket Server\nPort 8888] as Server
+  [ClientHandler] as Handler
+  [ClientManager] as Manager
+  [UserService] as UserService
+  [GameService] as GameService
+}
+
+database "MySQL Database" as Database {
+  [users table]
+  [games table]
+}
+
+[TCP Socket Connection] as Network
+
+LobbyUI --> Controller
+Controller <--> Socket
+Socket <--> Network
+Network <--> Server
+Server --> Handler
+Handler --> Manager
+Handler --> UserService
+Handler --> GameService
+UserService --> Database
+GameService --> Database
+
+note right of Manager
+  Module 2 Core:
+  - Quản lý clients
+  - Broadcast lobby updates
+  - Broadcast chat messages
+end note
+
+@enduml
+

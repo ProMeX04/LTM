@@ -1,0 +1,68 @@
+@startuml Class Diagram Module 2 Client
+!theme plain
+skinparam backgroundColor #FFFFFF
+
+package "com.promex04.view" {
+  class LobbyView {
+    -GameController controller
+    -ListView<User> userListView
+    -ListView<String> chatListView
+    -TextField chatInputField
+    -TextField searchField
+    -Button challengeButton
+    -void initializeUI()
+    -void setupCallbacks()
+    -void handleSendMessage()
+    -void handleChallenge()
+    -void filterUsers(String searchText)
+  }
+}
+
+package "com.promex04.controller" {
+  class GameController {
+    -Socket socket
+    -PrintWriter out
+    -BufferedReader in
+    -ObservableList<User> lobbyUsers
+    -ObservableList<String> chatMessages
+    -String currentUsername
+    +void sendChatMessage(String message)
+    +void challenge(String opponentUsername, String artist, String genre, int totalRounds)
+    +void respondToChallenge(boolean accept)
+    -void handleChatMessage(String[] parts)
+    -void handleChallengeRequest(String[] parts)
+    -void handleChallengeAccepted(String[] parts)
+    -void handleChallengeRejected(String[] parts)
+    -void handleLobbyUpdate(String[] parts)
+  }
+}
+
+package "com.promex04.model" {
+  class User {
+    -String username
+    -Integer totalScore
+    -String status
+    +String getUsername()
+    +Integer getTotalScore()
+    +String getStatus()
+  }
+}
+
+LobbyView --> GameController : uses
+GameController --> User : manages
+LobbyView --> User : displays
+
+note right of LobbyView
+  UI hiển thị lobby với:
+  - Danh sách người chơi
+  - Chat box
+  - Nút thách đấu
+end note
+
+note right of GameController
+  Xử lý logic giao tiếp với server
+  Quản lý state của lobby và chat
+end note
+
+@enduml
+

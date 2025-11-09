@@ -1,0 +1,49 @@
+@startuml ERD Module 2
+!theme plain
+skinparam backgroundColor #FFFFFF
+
+entity "User" {
+  * id : Long <<PK>>
+  --
+  * username : String
+  * password : String
+  * totalScore : Integer
+  * correctAnswers : Integer
+  * gamesWon : Integer
+  * gamesPlayed : Integer
+}
+
+entity "Game" {
+  * id : Long <<PK>>
+  --
+  * player1_id : Long <<FK>>
+  * player2_id : Long <<FK>>
+  * player1Score : Integer
+  * player2Score : Integer
+  * status : GameStatus
+  * preferredArtist : String
+  * preferredGenre : String
+  * winner_id : Long <<FK>>
+  * createdAt : LocalDateTime
+  * finishedAt : LocalDateTime
+}
+
+User ||--o{ Game : "player1"
+User ||--o{ Game : "player2"
+User ||--o{ Game : "winner"
+
+note right of User
+  Module 2 sử dụng User để:
+  - Hiển thị danh sách người chơi
+  - Xác định trạng thái (rỗi/bận)
+  - Gửi thách đấu
+end note
+
+note right of Game
+  Module 2 tạo Game khi:
+  - Challenge được chấp nhận
+  - Cập nhật trạng thái người chơi thành "bận"
+end note
+
+@enduml
+

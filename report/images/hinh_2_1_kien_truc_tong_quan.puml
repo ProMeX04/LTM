@@ -1,0 +1,33 @@
+@startuml Kiến trúc tổng quan
+!theme plain
+skinparam backgroundColor #FFFFFF
+
+package "Client Application" {
+  [JavaFX UI] as UI
+  [Game Controller] as Controller
+  [Socket Client] as SocketClient
+  [Audio Player] as AudioPlayer
+}
+
+package "Server Application" {
+  [Socket Server] as SocketServer
+  [Client Handler] as Handler
+  [Client Manager] as ClientManager
+  [Business Logic] as BusinessLogic
+  [Data Access Layer] as DataAccess
+}
+
+database "MySQL Database" as Database
+
+UI --> Controller
+Controller --> SocketClient
+Controller --> AudioPlayer
+SocketClient <--> SocketServer
+SocketServer --> Handler
+Handler --> ClientManager
+Handler --> BusinessLogic
+BusinessLogic --> DataAccess
+DataAccess --> Database
+
+@enduml
+

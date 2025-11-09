@@ -1,0 +1,42 @@
+@startuml Sơ đồ khối Client
+!theme plain
+skinparam backgroundColor #FFFFFF
+
+rectangle "Client Application" {
+  rectangle "UI Layer" {
+    [LoginView]
+    [LobbyView]
+    [GameView]
+    [GameOverView]
+  }
+
+  rectangle "Controller Layer" {
+    [GameController]
+  }
+
+  rectangle "Model Layer" {
+    [User Model]
+    [GameRound Model]
+    [RankingEntry Model]
+  }
+
+  rectangle "Network Layer" {
+    [Socket Client]
+    [Binary Transfer Client]
+  }
+
+  rectangle "Media Layer" {
+    [Audio Player]
+  }
+}
+
+[LoginView] --> [GameController]
+[LobbyView] --> [GameController]
+[GameView] --> [GameController]
+[GameController] --> [Socket Client]
+[GameController] --> [User Model]
+[GameController] --> [Audio Player]
+[Socket Client] --> [Binary Transfer Client]
+
+@enduml
+

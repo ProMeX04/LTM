@@ -1,0 +1,44 @@
+@startuml Sơ đồ khối Server
+!theme plain
+skinparam backgroundColor #FFFFFF
+
+rectangle "Server Application" {
+  rectangle "Network Layer" {
+    [Socket Server]
+    [Binary Transfer Service]
+  }
+
+  rectangle "Handler Layer" {
+    [Client Handler]
+    [Client Manager]
+  }
+
+  rectangle "Service Layer" {
+    [User Service]
+    [Game Service]
+  }
+
+  rectangle "Repository Layer" {
+    [User Repository]
+    [Game Repository]
+    [Audio Repository]
+  }
+
+  rectangle "Database" {
+    [MySQL]
+  }
+}
+
+[Socket Server] --> [Client Handler]
+[Client Handler] --> [Client Manager]
+[Client Handler] --> [User Service]
+[Client Handler] --> [Game Service]
+[User Service] --> [User Repository]
+[Game Service] --> [Game Repository]
+[Game Service] --> [Audio Repository]
+[User Repository] --> [MySQL]
+[Game Repository] --> [MySQL]
+[Audio Repository] --> [MySQL]
+
+@enduml
+

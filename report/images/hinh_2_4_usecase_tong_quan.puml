@@ -1,0 +1,36 @@
+@startuml Usecase tổng quan
+!theme plain
+skinparam backgroundColor #FFFFFF
+
+left to right direction
+
+actor "Người chơi" as Player
+
+rectangle "Hệ thống Game Đoán Âm Thanh" {
+  usecase "Đăng nhập/Đăng ký" as UC_LOGIN
+  usecase "Xem danh sách người chơi" as UC_VIEW_PLAYERS
+  usecase "Chat trong lobby" as UC_CHAT
+  usecase "Thách đấu người chơi khác" as UC_CHALLENGE
+  usecase "Chấp nhận/Từ chối thách đấu" as UC_RESPOND
+  usecase "Chơi game" as UC_PLAY
+  usecase "Xem bảng xếp hạng" as UC_RANKING
+  usecase "Quản lý audio" as UC_AUDIO
+}
+
+Player --> UC_LOGIN
+Player --> UC_VIEW_PLAYERS
+Player --> UC_CHAT
+Player --> UC_CHALLENGE
+Player --> UC_RESPOND
+Player --> UC_PLAY
+Player --> UC_RANKING
+
+UC_LOGIN ..> UC_VIEW_PLAYERS : <<include>>
+UC_VIEW_PLAYERS ..> UC_CHAT : <<include>>
+UC_VIEW_PLAYERS ..> UC_CHALLENGE : <<include>>
+UC_CHALLENGE ..> UC_RESPOND : <<include>>
+UC_RESPOND ..> UC_PLAY : <<include>>
+UC_PLAY ..> UC_RANKING : <<include>>
+
+@enduml
+

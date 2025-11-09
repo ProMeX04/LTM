@@ -8,7 +8,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.util.Duration;
@@ -59,7 +58,6 @@ public class GameView extends VBox {
         setAlignment(Pos.TOP_CENTER);
         setSpacing(12);
         setPadding(new Insets(16));
-        setStyle("-fx-background-color: #0d1117;");
 
         // Header với progress bar cho round
         HBox header = createHeader();
@@ -92,7 +90,7 @@ public class GameView extends VBox {
     private VBox createLoadingOverlay() {
         VBox overlay = new VBox(16);
         overlay.setAlignment(Pos.CENTER);
-        overlay.setStyle("-fx-background-color: rgba(13, 17, 23, 0.95); -fx-background-radius: 6; -fx-padding: 32;");
+        overlay.setStyle("-fx-background-radius: 6; -fx-padding: 32;");
         overlay.setVisible(false);
         overlay.setManaged(false);
         // Đặt overlay để phủ toàn bộ StackPane
@@ -102,22 +100,15 @@ public class GameView extends VBox {
 
         loadingStatusLabel = new Label("Đang tải âm thanh...");
         loadingStatusLabel.setFont(Font.font("Poppins", FontWeight.SEMI_BOLD, 16));
-        loadingStatusLabel.setTextFill(Color.web("#c9d1d9"));
         loadingStatusLabel.setAlignment(Pos.CENTER);
 
         loadingProgressBar = new ProgressBar();
         loadingProgressBar.setPrefWidth(400);
         loadingProgressBar.setPrefHeight(8);
         loadingProgressBar.setProgress(ProgressBar.INDETERMINATE_PROGRESS);
-        loadingProgressBar.setStyle("-fx-accent: #238636;");
 
         Button cancelButton = new Button("Hủy và quay lại sảnh");
         cancelButton.setOnAction(e -> controller.leaveGame());
-        cancelButton.setStyle("-fx-background-color: #21262d; -fx-text-fill: #f85149; -fx-border-color: #30363d; -fx-border-width: 1px; -fx-background-radius: 6; -fx-cursor: hand; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 8 16;");
-        cancelButton.setOnMouseEntered(e -> cancelButton.setStyle(
-                "-fx-background-color: #da3633; -fx-text-fill: white; -fx-border-color: #da3633; -fx-border-width: 1px; -fx-background-radius: 6; -fx-cursor: hand; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 8 16;"));
-        cancelButton.setOnMouseExited(e -> cancelButton.setStyle(
-                "-fx-background-color: #21262d; -fx-text-fill: #f85149; -fx-border-color: #30363d; -fx-border-width: 1px; -fx-background-radius: 6; -fx-cursor: hand; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 8 16;"));
 
         overlay.getChildren().addAll(loadingStatusLabel, loadingProgressBar, cancelButton);
         return overlay;
@@ -130,23 +121,12 @@ public class GameView extends VBox {
         // Timer chỉ có label, không có progress bar
         timerValueLabel = new Label("15s");
         timerValueLabel.setFont(Font.font("Poppins", FontWeight.BOLD, 20));
-        timerValueLabel.setTextFill(Color.web("#d29922"));
         timerValueLabel
-                .setStyle("-fx-background-color: #161b22; -fx-background-radius: 6; -fx-padding: 6 12; "
-                        + "-fx-border-color: #30363d; -fx-border-width: 1px; -fx-border-radius: 6;");
+                .setStyle("-fx-background-radius: 6; -fx-padding: 6 12; "
+                        + "-fx-border-width: 1px; -fx-border-radius: 6;");
 
         Button exitButton = new Button("Rời trận");
-        exitButton.setStyle("-fx-background-color: #21262d; -fx-text-fill: #f85149; "
-                + "-fx-border-color: #30363d; -fx-border-width: 1px; "
-                + "-fx-background-radius: 6px; -fx-cursor: hand; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 8 16;");
-        exitButton.setOnMouseEntered(e -> exitButton.setStyle(
-                "-fx-background-color: #da3633; -fx-text-fill: white; "
-                        + "-fx-border-color: #da3633; -fx-border-width: 1px; "
-                        + "-fx-background-radius: 6px; -fx-cursor: hand; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 8 16;"));
-        exitButton.setOnMouseExited(e -> exitButton.setStyle(
-                "-fx-background-color: #21262d; -fx-text-fill: #f85149; "
-                        + "-fx-border-color: #30363d; -fx-border-width: 1px; "
-                        + "-fx-background-radius: 6px; -fx-cursor: hand; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 8 16;"));
+        exitButton.setStyle("-fx-background-radius: 6px; -fx-cursor: hand; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 8 16;");
         exitButton.setOnAction(e -> handleLeaveMatch());
 
         HBox header = new HBox(20, spacer, timerValueLabel, exitButton);
@@ -158,26 +138,18 @@ public class GameView extends VBox {
     private VBox createAudioSection() {
         VBox audioCard = new VBox(12);
         audioCard.setAlignment(Pos.TOP_CENTER);
-        audioCard.setStyle("-fx-background-color: #161b22; -fx-background-radius: 6; -fx-padding: 16; "
-                + "-fx-border-color: #30363d; -fx-border-width: 1px; -fx-border-radius: 6;");
+        audioCard.setStyle("-fx-background-radius: 6; -fx-padding: 16; "
+                + "-fx-border-width: 1px; -fx-border-radius: 6;");
 
         // Audio status và button
         audioStatusLabel = new Label("Đang chờ...");
         audioStatusLabel.setFont(Font.font("Poppins", FontWeight.NORMAL, 12));
-        audioStatusLabel.setTextFill(Color.web("#c9d1d9"));
         audioStatusLabel.setWrapText(true);
         audioStatusLabel.setAlignment(Pos.CENTER);
 
         playAudioButton = new Button("Nghe lại");
         playAudioButton
-                .setStyle("-fx-background-color: #238636; -fx-text-fill: white;"
-                        + "-fx-background-radius: 6px; -fx-cursor: hand; -fx-font-size: 11px; -fx-font-weight: bold; -fx-padding: 8 16;");
-        playAudioButton.setOnMouseEntered(e -> playAudioButton.setStyle(
-                "-fx-background-color: #2ea043; -fx-text-fill: white;"
-                        + "-fx-background-radius: 6px; -fx-cursor: hand; -fx-font-size: 11px; -fx-font-weight: bold; -fx-padding: 8 16;"));
-        playAudioButton.setOnMouseExited(e -> playAudioButton.setStyle(
-                "-fx-background-color: #238636; -fx-text-fill: white;"
-                        + "-fx-background-radius: 6px; -fx-cursor: hand; -fx-font-size: 11px; -fx-font-weight: bold; -fx-padding: 8 16;"));
+                .setStyle("-fx-background-radius: 6px; -fx-cursor: hand; -fx-font-size: 11px; -fx-font-weight: bold; -fx-padding: 8 16;");
         playAudioButton.setOnAction(e -> replayAudio());
 
         // Score section (gộp vào đây)
@@ -190,17 +162,14 @@ public class GameView extends VBox {
 
         myPlayerNameLabel = new Label("Bạn");
         myPlayerNameLabel.setFont(Font.font("Poppins", FontWeight.SEMI_BOLD, 13));
-        myPlayerNameLabel.setTextFill(Color.web("#c9d1d9"));
         myPlayerNameLabel.setPrefWidth(60);
 
         myCurrentRoundLabel = new Label("Câu 0");
         myCurrentRoundLabel.setFont(Font.font("Poppins", FontWeight.NORMAL, 12));
-        myCurrentRoundLabel.setTextFill(Color.web("#8b949e"));
         myCurrentRoundLabel.setPrefWidth(50);
 
         myScoreValueLabel = new Label("0");
         myScoreValueLabel.setFont(Font.font("Poppins", FontWeight.BOLD, 15));
-        myScoreValueLabel.setTextFill(Color.web("#3fb950"));
         myScoreValueLabel.setPrefWidth(40);
 
         myRow.getChildren().addAll(myPlayerNameLabel, myCurrentRoundLabel, myScoreValueLabel);
@@ -211,17 +180,14 @@ public class GameView extends VBox {
 
         opponentPlayerNameLabel = new Label("Đối thủ");
         opponentPlayerNameLabel.setFont(Font.font("Poppins", FontWeight.SEMI_BOLD, 13));
-        opponentPlayerNameLabel.setTextFill(Color.web("#c9d1d9"));
         opponentPlayerNameLabel.setPrefWidth(60);
 
         opponentCurrentRoundLabel = new Label("Câu 0");
         opponentCurrentRoundLabel.setFont(Font.font("Poppins", FontWeight.NORMAL, 12));
-        opponentCurrentRoundLabel.setTextFill(Color.web("#8b949e"));
         opponentCurrentRoundLabel.setPrefWidth(50);
 
         opponentScoreValueLabel = new Label("0");
         opponentScoreValueLabel.setFont(Font.font("Poppins", FontWeight.BOLD, 15));
-        opponentScoreValueLabel.setTextFill(Color.web("#f85149"));
         opponentScoreValueLabel.setPrefWidth(40);
 
         opponentRow.getChildren().addAll(opponentPlayerNameLabel, opponentCurrentRoundLabel, opponentScoreValueLabel);
@@ -256,8 +222,8 @@ public class GameView extends VBox {
 
         VBox optionsCard = new VBox(12, optionsGrid);
         optionsCard.setAlignment(Pos.TOP_CENTER);
-        optionsCard.setStyle("-fx-background-color: #161b22; -fx-background-radius: 6; -fx-padding: 16; "
-                + "-fx-border-color: #30363d; -fx-border-width: 1px; -fx-border-radius: 6;");
+        optionsCard.setStyle("-fx-background-radius: 6; -fx-padding: 16; "
+                + "-fx-border-width: 1px; -fx-border-radius: 6;");
 
         return optionsCard;
     }
@@ -265,12 +231,10 @@ public class GameView extends VBox {
     private HBox createStatusSection() {
         statusIndicator = new ProgressIndicator();
         statusIndicator.setPrefSize(24, 24);
-        statusIndicator.setStyle("-fx-progress-color: #3fb950;");
         statusIndicator.setVisible(false);
 
         statusLabel = new Label("Chờ âm thanh...");
         statusLabel.setFont(Font.font("Poppins", FontWeight.MEDIUM, 13));
-        statusLabel.setTextFill(Color.web("#c9d1d9"));
 
         HBox statusBox = new HBox(10, statusIndicator, statusLabel);
         statusBox.setAlignment(Pos.CENTER);
@@ -284,15 +248,7 @@ public class GameView extends VBox {
         button.setWrapText(true);
         button.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
         button.setFont(Font.font("Poppins", FontWeight.SEMI_BOLD, 14));
-        button.setStyle("-fx-background-color: #21262d; -fx-text-fill: #c9d1d9; "
-                + "-fx-background-radius: 6; -fx-cursor: hand; -fx-border-color: #30363d; -fx-border-width: 1px; -fx-border-radius: 6;");
-
-        button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: #30363d; -fx-text-fill: #c9d1d9; "
-                + "-fx-background-radius: 6; -fx-cursor: hand; -fx-border-color: #58a6ff; -fx-border-width: 1px; -fx-border-radius: 6;"));
-
-        button.setOnMouseExited(
-                e -> button.setStyle("-fx-background-color: #21262d; -fx-text-fill: #c9d1d9; "
-                        + "-fx-background-radius: 6; -fx-cursor: hand; -fx-border-color: #30363d; -fx-border-width: 1px; -fx-border-radius: 6;"));
+        button.setStyle("-fx-background-radius: 6; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-radius: 6;");
 
         return button;
     }
@@ -331,19 +287,15 @@ public class GameView extends VBox {
 
             // Update status indicator
             if (isCorrect) {
-                statusIndicator.setStyle("-fx-progress-color: #3fb950;");
                 statusIndicator.setProgress(1.0);
                 statusLabel.setText("Đúng! +" + points + " điểm");
-                statusLabel.setTextFill(Color.web("#3fb950"));
             } else {
-                statusIndicator.setStyle("-fx-progress-color: #f85149;");
                 statusIndicator.setProgress(1.0);
                 if (selectedAnswer == 0) {
                     statusLabel.setText("Hết giờ! 0 điểm");
                 } else {
                     statusLabel.setText("Sai! 0 điểm");
                 }
-                statusLabel.setTextFill(Color.web("#f85149"));
             }
             statusIndicator.setVisible(true);
 
@@ -434,12 +386,10 @@ public class GameView extends VBox {
 
         statusIndicator.setVisible(false);
         statusLabel.setText("Nghe âm thanh và chọn đáp án");
-        statusLabel.setTextFill(Color.web("#c9d1d9"));
     }
 
     private void resetButtonStyles() {
-        String defaultStyle = "-fx-background-color: #21262d; -fx-text-fill: #c9d1d9; "
-                + "-fx-background-radius: 6; -fx-cursor: hand; -fx-border-color: #30363d; -fx-border-width: 1px; -fx-border-radius: 6;";
+        String defaultStyle = "-fx-background-radius: 6; -fx-cursor: hand; -fx-border-width: 1px; -fx-border-radius: 6;";
         option1Button.setStyle(defaultStyle);
         option2Button.setStyle(defaultStyle);
         option3Button.setStyle(defaultStyle);
@@ -453,12 +403,12 @@ public class GameView extends VBox {
 
         if (isCorrect) {
             selectedButton.setStyle(
-                    "-fx-background-color: #238636; -fx-text-fill: white; "
-                            + "-fx-background-radius: 6; -fx-cursor: default; -fx-border-color: #3fb950; -fx-border-width: 1px; -fx-border-radius: 6;");
+                    "-fx-background-color: #4CAF50; -fx-text-fill: white; "
+                            + "-fx-background-radius: 6; -fx-cursor: default; -fx-border-width: 1px; -fx-border-radius: 6;");
         } else {
             selectedButton.setStyle(
-                    "-fx-background-color: #da3633; -fx-text-fill: white; "
-                            + "-fx-background-radius: 6; -fx-cursor: default; -fx-border-color: #f85149; -fx-border-width: 1px; -fx-border-radius: 6;");
+                    "-fx-background-color: #F44336; -fx-text-fill: white; "
+                            + "-fx-background-radius: 6; -fx-cursor: default; -fx-border-width: 1px; -fx-border-radius: 6;");
         }
     }
 
@@ -568,20 +518,13 @@ public class GameView extends VBox {
         }
 
         timerValueLabel.setText("15s");
-        timerValueLabel.setTextFill(Color.web("#d29922"));
         timerValueLabel
-                .setStyle("-fx-background-color: #161b22; -fx-background-radius: 6; -fx-padding: 8 16; "
-                        + "-fx-border-color: #30363d; -fx-border-width: 1px; -fx-border-radius: 6;");
+                .setStyle("-fx-background-radius: 6; -fx-padding: 8 16; "
+                        + "-fx-border-width: 1px; -fx-border-radius: 6;");
 
         timerTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
             remainingSeconds--;
             timerValueLabel.setText(remainingSeconds + "s");
-
-            if (remainingSeconds <= 5) {
-                timerValueLabel.setTextFill(Color.web("#f85149"));
-            } else {
-                timerValueLabel.setTextFill(Color.web("#d29922"));
-            }
 
             if (remainingSeconds <= 0) {
                 stopTimer();

@@ -1,0 +1,58 @@
+@startuml Class Diagram Module 2 Server
+!theme plain
+skinparam backgroundColor #FFFFFF
+
+package "com.promex04.service" {
+  class ClientManager {
+    -Map<String, ClientHandler> connectedClients
+    -UserService userService
+    +void addClient(String username, ClientHandler handler)
+    +void removeClient(String username)
+    +ClientHandler getClient(String username)
+    +void broadcastLobbyUpdate()
+    +void broadcastToLobby(String message)
+    +String getLobbyStatus()
+  }
+
+  class ClientHandler {
+    -Socket socket
+    -ClientManager clientManager
+    -User currentUser
+    -boolean inGame
+    -PrintWriter out
+    -BufferedReader in
+    +void run()
+    -void handleMessage(String message)
+    -void handleChatLobby(String[] parts)
+    -void handleChallenge(String[] parts)
+    -void handleChallengeResponse(String[] parts)
+    +void sendMessage(String message)
+  }
+}
+
+package "com.promex04.model" {
+  class User {
+    -Long id
+    -String username
+    -Integer totalScore
+    -String status
+  }
+}
+
+ClientManager --> ClientHandler : manages
+ClientHandler --> ClientManager : uses
+ClientHandler --> User : currentUser
+ClientManager --> User : uses
+
+note right of ClientManager
+  Quản lý tất cả clients đang kết nối
+  Broadcast messages đến lobby
+end note
+
+note right of ClientHandler
+  Xử lý giao tiếp với một client cụ thể
+  Xử lý chat và challenge commands
+end note
+
+@enduml
+

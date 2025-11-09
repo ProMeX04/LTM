@@ -41,22 +41,10 @@ public class ClientApplication extends Application {
         // Initialize scenes once to avoid reusing roots across scenes
         loginScene = new Scene(loginView, 400, 400);
         lobbyScene = new Scene(lobbyView, 1200, 700);
-        gameScene = new Scene(gameView, 600, 600);
+        gameScene = new Scene(gameView, 600, 400);
         loadingView = new LoadingView(controller);
         loadingScene = new Scene(loadingView, 800, 500);
-        gameOverScene = new Scene(gameOverView, 600, 600);
-
-        // Apply CSS stylesheet for GitHub dark theme globally
-        try {
-            String cssPath = ClientApplication.class.getResource("/github-dark.css").toExternalForm();
-            loginScene.getStylesheets().add(cssPath);
-            lobbyScene.getStylesheets().add(cssPath);
-            gameScene.getStylesheets().add(cssPath);
-            loadingScene.getStylesheets().add(cssPath);
-            gameOverScene.getStylesheets().add(cssPath);
-        } catch (Exception e) {
-            System.err.println("Could not load CSS file: " + e.getMessage());
-        }
+        gameOverScene = new Scene(gameOverView, 600, 400);
 
         // Setup navigation callbacks
         setupNavigation();

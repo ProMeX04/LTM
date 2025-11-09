@@ -58,7 +58,6 @@ public class LobbyView extends BorderPane {
         HBox.setHgrow(topSpacer, Priority.ALWAYS);
 
         Button logoutButton = new Button("Đăng xuất");
-        logoutButton.getStyleClass().addAll("danger", "small");
         logoutButton.setOnAction(e -> handleLogout());
 
         topBar.getChildren().addAll(userLabel, topSpacer, logoutButton);
@@ -68,7 +67,6 @@ public class LobbyView extends BorderPane {
         VBox leftBox = new VBox(12);
         leftBox.setPadding(new Insets(16));
         leftBox.setPrefWidth(450);
-        leftBox.getStyleClass().add("card");
 
         Label userListLabel = new Label("Danh sách người chơi");
         userListLabel.setFont(Font.font("Inter", FontWeight.BOLD, 16));
@@ -83,7 +81,6 @@ public class LobbyView extends BorderPane {
         searchField = new TextField();
         searchField.setPromptText("Tìm kiếm người chơi...");
         searchField.setPrefHeight(40);
-        searchField.getStyleClass().add("search");
 
         // Lắng nghe thay đổi text để lọc danh sách
         searchField.textProperty().addListener((observable, oldValue, newValue) -> {
@@ -94,14 +91,12 @@ public class LobbyView extends BorderPane {
         userListView.setStyle("-fx-background-insets: 0; -fx-padding: 4;");
         userListView.setCellFactory(listView -> new UserListCell());
         Label placeholderLabel = new Label("Không tìm thấy người chơi");
-        placeholderLabel.getStyleClass().add("placeholder");
         userListView.setPlaceholder(placeholderLabel);
         VBox.setVgrow(userListView, Priority.ALWAYS);
 
         challengeButton = new Button("Thách đấu");
         challengeButton.setPrefWidth(Double.MAX_VALUE);
         challengeButton.setPrefHeight(40);
-        challengeButton.getStyleClass().add("primary");
         challengeButton.setOnAction(e -> handleChallenge());
         challengeButton.disableProperty().bind(
                 Bindings.createBooleanBinding(() -> {
@@ -141,7 +136,6 @@ public class LobbyView extends BorderPane {
                 container.setAlignment(Pos.CENTER_LEFT);
                 bubble.setWrapText(true);
                 bubble.setMaxWidth(400);
-                bubble.getStyleClass().add("chat-bubble");
                 HBox.setHgrow(spacer, Priority.ALWAYS);
                 container.getChildren().addAll(spacer, bubble);
             }
@@ -151,9 +145,7 @@ public class LobbyView extends BorderPane {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
                     setGraphic(null);
-                    setStyle("-fx-background-color: #0d1117;");
                 } else {
-                    setStyle("-fx-background-color: #0d1117;");
                     // Phân tích tin nhắn: format là "username: message"
                     String currentUsername = controller.getCurrentUsername();
                     boolean isMyMessage = false;
@@ -167,23 +159,20 @@ public class LobbyView extends BorderPane {
                         isMyMessage = currentUsername != null && username.equals(currentUsername);
 
                         if (isMyMessage) {
-                            // Tin nhắn của mình: hiển thị bên phải, màu xanh GitHub
+                            // Tin nhắn của mình: hiển thị bên phải
                             displayText = message;
-                            bubble.getStyleClass().setAll("chat-bubble", "my-message");
                             container.setAlignment(Pos.CENTER_RIGHT);
                             container.getChildren().clear();
                             container.getChildren().addAll(bubble, spacer);
                         } else {
-                            // Tin nhắn của người khác: hiển thị bên trái, màu xám GitHub
+                            // Tin nhắn của người khác: hiển thị bên trái
                             displayText = username + ": " + message;
-                            bubble.getStyleClass().setAll("chat-bubble", "other-message");
                             container.setAlignment(Pos.CENTER_LEFT);
                             container.getChildren().clear();
                             container.getChildren().addAll(bubble, spacer);
                         }
                     } else {
                         // Tin nhắn hệ thống: giữ nguyên
-                        bubble.getStyleClass().setAll("chat-bubble", "system");
                         container.setAlignment(Pos.CENTER_LEFT);
                         container.getChildren().clear();
                         container.getChildren().addAll(bubble, spacer);
@@ -212,7 +201,6 @@ public class LobbyView extends BorderPane {
         Button sendButton = new Button("Send");
         sendButton.setPrefWidth(50);
         sendButton.setPrefHeight(45);
-        sendButton.getStyleClass().addAll("primary", "large");
         sendButton.setOnAction(e -> handleSendMessage());
         sendButton.disableProperty().bind(
                 Bindings.createBooleanBinding(
@@ -233,18 +221,15 @@ public class LobbyView extends BorderPane {
         VBox rightBox = new VBox(12);
         rightBox.setPadding(new Insets(16));
         rightBox.setPrefWidth(380);
-        rightBox.getStyleClass().add("card");
 
         Label rankingLabel = new Label("Bảng xếp hạng");
         rankingLabel.setFont(Font.font("Inter", FontWeight.BOLD, 16));
-        rankingLabel.getStyleClass().add("title");
 
         // TableView cho bảng xếp hạng
         rankingTable = new TableView<>();
         rankingTable.setItems(controller.getRankingList());
         rankingTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
         Label rankingPlaceholder = new Label("Chưa có dữ liệu xếp hạng");
-        rankingPlaceholder.getStyleClass().add("placeholder");
         rankingTable.setPlaceholder(rankingPlaceholder);
         VBox.setVgrow(rankingTable, Priority.ALWAYS);
 
@@ -252,117 +237,11 @@ public class LobbyView extends BorderPane {
         rankCol.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getRank()));
         rankCol.setMaxWidth(150);
         rankCol.setMinWidth(100);
-        rankCol.setCellFactory(column -> new javafx.scene.control.TableCell<com.promex04.model.RankingEntry, Number>() {
-            @Override
-            protected void updateItem(Number item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                    setStyle("-fx-background-color: #0d1117;");
-                } else {
-                    setText(item.toString());
-                    setTextFill(Color.WHITE);
-                    updateRowStyle();
-                }
-            }
-
-            private void updateRowStyle() {
-                javafx.scene.control.TableRow<com.promex04.model.RankingEntry> row = getTableRow();
-                if (row != null) {
-                    if (row.isSelected()) {
-                        setStyle("-fx-background-color: #1f6feb; -fx-text-fill: white;");
-                        setTextFill(Color.WHITE);
-                    } else {
-                        setStyle("-fx-background-color: #0d1117; -fx-text-fill: white;");
-                        setTextFill(Color.WHITE);
-                    }
-                } else {
-                    setStyle("-fx-background-color: #0d1117; -fx-text-fill: white;");
-                    setTextFill(Color.WHITE);
-                }
-            }
-
-            @Override
-            public void updateSelected(boolean selected) {
-                super.updateSelected(selected);
-                updateRowStyle();
-            }
-        });
 
         TableColumn<com.promex04.model.RankingEntry, Number> winCol = new TableColumn<>("Số trận thắng");
         winCol.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getGamesWon()));
-        winCol.setCellFactory(column -> new javafx.scene.control.TableCell<com.promex04.model.RankingEntry, Number>() {
-            @Override
-            protected void updateItem(Number item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                    setStyle("-fx-background-color: #0d1117;");
-                } else {
-                    setText(item.toString());
-                    setTextFill(Color.WHITE);
-                    updateRowStyle();
-                }
-            }
-
-            private void updateRowStyle() {
-                javafx.scene.control.TableRow<com.promex04.model.RankingEntry> row = getTableRow();
-                if (row != null) {
-                    if (row.isSelected()) {
-                        setStyle("-fx-background-color: #1f6feb; -fx-text-fill: white;");
-                        setTextFill(Color.WHITE);
-                    } else {
-                        setStyle("-fx-background-color: #0d1117; -fx-text-fill: white;");
-                        setTextFill(Color.WHITE);
-                    }
-                } else {
-                    setStyle("-fx-background-color: #0d1117; -fx-text-fill: white;");
-                    setTextFill(Color.WHITE);
-                }
-            }
-
-            @Override
-            public void updateSelected(boolean selected) {
-                super.updateSelected(selected);
-                updateRowStyle();
-            }
-        });
-
-        // Row factory được handle bởi CSS
 
         rankingTable.getColumns().addAll(rankCol, winCol);
-
-        // Function to style column headers
-        Runnable styleHeaders = () -> {
-            rankingTable.lookupAll(".column-header").forEach(node -> {
-                node.setStyle("-fx-background-color: #161b22; -fx-text-fill: white;");
-                // Style all text nodes inside column header
-                javafx.scene.Node label = node.lookup(".label");
-                if (label != null) {
-                    label.setStyle("-fx-text-fill: white;");
-                    if (label instanceof javafx.scene.control.Label) {
-                        ((javafx.scene.control.Label) label).setTextFill(Color.WHITE);
-                    }
-                }
-                // Also try to find text nodes directly
-                node.lookupAll(".text").forEach(textNode -> {
-                    textNode.setStyle("-fx-fill: white;");
-                });
-            });
-        };
-
-        // Apply style immediately and also after scene is shown
-        Platform.runLater(() -> {
-            styleHeaders.run();
-            // Also add listener for when TableView is shown
-            rankingTable.sceneProperty().addListener((obs, oldScene, newScene) -> {
-                if (newScene != null) {
-                    Platform.runLater(() -> {
-                        styleHeaders.run();
-                    });
-                }
-            });
-        });
 
         rightBox.getChildren().addAll(rankingLabel, rankingTable);
         setRight(rightBox);
@@ -417,22 +296,6 @@ public class LobbyView extends BorderPane {
         controller.setOnRankingUpdate(() -> {
             // TableView đã bind items; chỉ cần refresh nếu cần
             rankingTable.refresh();
-            // Style column headers again after update
-            Platform.runLater(() -> {
-                rankingTable.lookupAll(".column-header").forEach(node -> {
-                    node.setStyle("-fx-background-color: #161b22; -fx-text-fill: white;");
-                    javafx.scene.Node label = node.lookup(".label");
-                    if (label != null) {
-                        label.setStyle("-fx-text-fill: white;");
-                        if (label instanceof javafx.scene.control.Label) {
-                            ((javafx.scene.control.Label) label).setTextFill(Color.WHITE);
-                        }
-                    }
-                    node.lookupAll(".text").forEach(textNode -> {
-                        textNode.setStyle("-fx-fill: white;");
-                    });
-                });
-            });
         });
 
         controller.requestRanking();
@@ -564,22 +427,16 @@ public class LobbyView extends BorderPane {
         Dialog<ChallengePreference> dialog = new Dialog<>();
         dialog.setTitle("Chọn chủ đề âm thanh");
 
-        dialog.getDialogPane().getStylesheets().add(
-                getClass().getResource("/github-dark.css").toExternalForm());
-        dialog.getDialogPane().getStyleClass().add("compact-dialog");
-
         ButtonType sendButtonType = new ButtonType("Gửi lời mời", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(sendButtonType, ButtonType.CANCEL);
 
         Button sendButton = (Button) dialog.getDialogPane().lookupButton(sendButtonType);
         if (sendButton != null) {
-            sendButton.getStyleClass().addAll("primary", "small");
             sendButton.setDefaultButton(true);
         }
 
         Button cancelButton = (Button) dialog.getDialogPane().lookupButton(ButtonType.CANCEL);
         if (cancelButton != null) {
-            cancelButton.getStyleClass().addAll("secondary", "small");
             cancelButton.setCancelButton(true);
         }
 
@@ -588,12 +445,11 @@ public class LobbyView extends BorderPane {
         
         // === CHỌN CA SĨ ===
         Label artistLabel = new Label("Ca sĩ:");
-        artistLabel.setStyle("-fx-text-fill: #c9d1d9; -fx-font-size: 13px;");
+        artistLabel.setStyle("-fx-font-size: 13px;");
         
         TextField artistSearchField = new TextField();
         artistSearchField.setPromptText("Tìm kiếm ca sĩ...");
         artistSearchField.setPrefHeight(32);
-        artistSearchField.getStyleClass().add("search");
         
         FilteredList<String> filteredArtists = new FilteredList<>(controller.getAvailableArtists(), p -> true);
         ListView<String> artistListView = new ListView<>(filteredArtists);
@@ -613,7 +469,7 @@ public class LobbyView extends BorderPane {
         
         // Label hiển thị giá trị đã chọn
         Label selectedArtistLabel = new Label("Chưa chọn");
-        selectedArtistLabel.setStyle("-fx-text-fill: #58a6ff; -fx-font-size: 12px; -fx-padding: 4 0;");
+        selectedArtistLabel.setStyle("-fx-font-size: 12px; -fx-padding: 4 0;");
         selectedArtistLabel.setWrapText(true);
         
         // Cập nhật label khi chọn
@@ -629,12 +485,11 @@ public class LobbyView extends BorderPane {
         
         // === CHỌN THỂ LOẠI ===
         Label genreLabel = new Label("Thể loại:");
-        genreLabel.setStyle("-fx-text-fill: #c9d1d9; -fx-font-size: 13px;");
+        genreLabel.setStyle("-fx-font-size: 13px;");
         
         TextField genreSearchField = new TextField();
         genreSearchField.setPromptText("Tìm kiếm thể loại...");
         genreSearchField.setPrefHeight(32);
-        genreSearchField.getStyleClass().add("search");
         
         FilteredList<String> filteredGenres = new FilteredList<>(controller.getAvailableGenres(), p -> true);
         ListView<String> genreListView = new ListView<>(filteredGenres);
@@ -654,7 +509,7 @@ public class LobbyView extends BorderPane {
         
         // Label hiển thị giá trị đã chọn
         Label selectedGenreLabel = new Label("Chưa chọn");
-        selectedGenreLabel.setStyle("-fx-text-fill: #58a6ff; -fx-font-size: 12px; -fx-padding: 4 0;");
+        selectedGenreLabel.setStyle("-fx-font-size: 12px; -fx-padding: 4 0;");
         selectedGenreLabel.setWrapText(true);
         
         // Cập nhật label khi chọn
@@ -688,7 +543,6 @@ public class LobbyView extends BorderPane {
         });
 
         VBox content = new VBox(12, artistBox, genreBox, roundsSpinner);
-        content.getStyleClass().add("compact-dialog-body");
         content.setPrefWidth(350);
 
         dialog.getDialogPane().setContent(content);
@@ -839,21 +693,21 @@ public class LobbyView extends BorderPane {
 
         {
             row.setAlignment(Pos.CENTER_LEFT);
-            nameLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #c9d1d9;");
-            scoreLabel.setStyle("-fx-text-fill: #8b949e; -fx-font-size: 11px;");
-            preferenceLabel.setStyle("-fx-text-fill: #58a6ff; -fx-font-size: 11px;");
+            nameLabel.setStyle("-fx-font-weight: bold;");
+            scoreLabel.setStyle("-fx-font-size: 11px;");
+            preferenceLabel.setStyle("-fx-font-size: 11px;");
             preferenceLabel.setVisible(false);
             preferenceLabel.setManaged(false);
             statusPill.setStyle(
-                    "-fx-background-radius: 6; -fx-padding: 2 8 2 8; -fx-text-fill: white; -fx-font-size: 11px;");
+                    "-fx-background-radius: 6; -fx-padding: 2 8 2 8; -fx-font-size: 11px;");
             nameScoreBox.getChildren().addAll(nameLabel, scoreLabel, preferenceLabel);
             Region spacer = new Region();
             HBox.setHgrow(spacer, Priority.ALWAYS);
             // Nút hành động khi nhận thách đấu
             acceptButton.setStyle(
-                    "-fx-background-color: #238636; -fx-text-fill: white; -fx-background-radius: 6; -fx-font-size: 11px; -fx-font-weight: bold;");
+                    "-fx-background-radius: 6; -fx-font-size: 11px; -fx-font-weight: bold;");
             rejectButton.setStyle(
-                    "-fx-background-color: #da3633; -fx-text-fill: white; -fx-background-radius: 6; -fx-font-size: 11px; -fx-font-weight: bold;");
+                    "-fx-background-radius: 6; -fx-font-size: 11px; -fx-font-weight: bold;");
             acceptButton.setOnAction(e -> {
                 controller.respondToChallenge(true);
                 clearCurrentChallenger();
@@ -873,10 +727,8 @@ public class LobbyView extends BorderPane {
             super.updateItem(user, empty);
             if (empty || user == null) {
                 setGraphic(null);
-                setStyle("-fx-background-color: #0d1117;");
             } else {
                 String status = user.getStatus();
-                String statusColor = "rỗi".equals(status) ? "#238636" : "#d29922";
                 String statusText = "rỗi".equals(status) ? "Rảnh" : "Bận";
 
                 // Avatar màu dựa vào hash username
@@ -890,8 +742,7 @@ public class LobbyView extends BorderPane {
                 boolean isInvitee = pendingInvitee.get() != null && pendingInvitee.get().equals(user.getUsername());
                 statusPill.setText(isInvitee ? "Đã mời" : statusText);
                 statusPill.setStyle(
-                        "-fx-background-radius: 6; -fx-padding: 2 8 2 8; -fx-text-fill: white; -fx-font-size: 11px;" +
-                                "-fx-background-color: " + (isInvitee ? "#1f6feb" : statusColor) + ";");
+                        "-fx-background-radius: 6; -fx-padding: 2 8 2 8; -fx-font-size: 11px;");
                 // Hiển thị nút chấp nhận/từ chối nếu đây là người thách đấu
                 boolean isChallenger = currentChallenger != null && currentChallenger.equals(user.getUsername());
                 actionBox.setVisible(isChallenger);
@@ -916,9 +767,9 @@ public class LobbyView extends BorderPane {
 
         private void updateCellStyle() {
             if (isSelected()) {
-                setStyle("-fx-background-color: #1f6feb; -fx-background-radius: 4; -fx-padding: 6 8 6 8;");
+                setStyle("-fx-background-radius: 4; -fx-padding: 6 8 6 8;");
             } else {
-                setStyle("-fx-background-color: #0d1117; -fx-padding: 6 8 6 8;");
+                setStyle("-fx-padding: 6 8 6 8;");
             }
         }
 

@@ -1,0 +1,51 @@
+@startuml Usecase Module 2
+!theme plain
+skinparam backgroundColor #FFFFFF
+
+left to right direction
+
+actor "Người chơi" as Player
+
+rectangle "Module 2: Lobby & Social Features" {
+
+  package "Lobby Management" {
+    usecase "UC2.1: Xem danh sách người chơi online" as UC_VIEW_LIST
+    usecase "UC2.2: Tìm kiếm người chơi" as UC_SEARCH
+    usecase "UC2.3: Lọc danh sách người chơi" as UC_FILTER
+    usecase "UC2.4: Cập nhật trạng thái lobby" as UC_UPDATE_LOBBY
+  }
+
+  package "Chat System" {
+    usecase "UC2.5: Gửi tin nhắn chat" as UC_SEND_CHAT
+    usecase "UC2.6: Nhận tin nhắn chat" as UC_RECEIVE_CHAT
+    usecase "UC2.7: Hiển thị lịch sử chat" as UC_CHAT_HISTORY
+  }
+
+  package "Challenge System" {
+    usecase "UC2.8: Gửi thách đấu" as UC_SEND_CHALLENGE
+    usecase "UC2.9: Nhận yêu cầu thách đấu" as UC_RECEIVE_CHALLENGE
+    usecase "UC2.10: Chấp nhận thách đấu" as UC_ACCEPT
+    usecase "UC2.11: Từ chối thách đấu" as UC_REJECT
+    usecase "UC2.12: Chọn chủ đề thách đấu" as UC_SELECT_TOPIC
+  }
+}
+
+Player --> UC_VIEW_LIST
+Player --> UC_SEARCH
+Player --> UC_FILTER
+Player --> UC_SEND_CHAT
+Player --> UC_RECEIVE_CHAT
+Player --> UC_SEND_CHALLENGE
+Player --> UC_RECEIVE_CHALLENGE
+Player --> UC_ACCEPT
+Player --> UC_REJECT
+Player --> UC_SELECT_TOPIC
+
+UC_VIEW_LIST ..> UC_SEARCH : <<include>>
+UC_VIEW_LIST ..> UC_FILTER : <<include>>
+UC_SEND_CHALLENGE ..> UC_SELECT_TOPIC : <<include>>
+UC_RECEIVE_CHALLENGE ..> UC_ACCEPT : <<extend>>
+UC_RECEIVE_CHALLENGE ..> UC_REJECT : <<extend>>
+
+@enduml
+

@@ -1,0 +1,54 @@
+@startuml Sequence Diagram Chat
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #0066CC
+  LifeLineBorderColor #0066CC
+  LifeLineBackgroundColor #E1F5FF
+}
+
+title Sequence Diagram - Chat trong Lobby
+
+actor "Người chơi 1" as Player1
+participant "LobbyView" as Lobby1
+participant "GameController" as Controller1
+participant "Socket" as Socket1
+participant "ClientHandler" as Handler1
+participant "ClientManager" as ClientManager
+participant "ClientHandler" as Handler2
+participant "Socket" as Socket2
+participant "GameController" as Controller2
+participant "LobbyView" as Lobby2
+actor "Người chơi 2" as Player2
+
+Player1 -> Lobby1: Nhập tin nhắn và click Send
+Lobby1 -> Controller1: sendChatMessage(message)
+Controller1 -> Socket1: Gửi "CHAT_LOBBY:message"
+
+Socket1 -> Handler1: Nhận message
+Handler1 -> Handler1: handleChatLobby(parts)
+Handler1 -> ClientManager: broadcastToLobby("MSG_LOBBY:username:message")
+
+ClientManager -> ClientManager: Lặp qua tất cả clients không trong game
+ClientManager -> Handler1: sendMessage("MSG_LOBBY:username:message")
+ClientManager -> Handler2: sendMessage("MSG_LOBBY:username:message")
+
+Handler1 -> Socket1: Gửi "MSG_LOBBY:username:message"
+Handler2 -> Socket2: Gửi "MSG_LOBBY:username:message"
+
+Socket1 -> Controller1: Nhận MSG_LOBBY
+Controller1 -> Controller1: handleChatMessage(parts)
+Controller1 -> Controller1: chatMessages.add("username: message")
+Controller1 -> Lobby1: onChatUpdate callback
+Lobby1 -> Lobby1: Tự động cuộn xuống cuối
+Lobby1 -> Player1: Hiển thị tin nhắn mới
+
+Socket2 -> Controller2: Nhận MSG_LOBBY
+Controller2 -> Controller2: handleChatMessage(parts)
+Controller2 -> Controller2: chatMessages.add("username: message")
+Controller2 -> Lobby2: onChatUpdate callback
+Lobby2 -> Lobby2: Tự động cuộn xuống cuối
+Lobby2 -> Player2: Hiển thị tin nhắn mới
+
+@enduml
+
