@@ -44,7 +44,14 @@ end note
 
 note right of BusinessLogic
   Binary file transfer
-  Separate port for audio files
+  Separate port for audio segments (port 7777)
+  Manages Artist, Genre, Audio, AudioSegment
+end note
+
+note right of DataAccess
+  Repositories for:
+  User, Game, GameRound,
+  Audio, Artist, Genre, AudioSegment
 end note
 
 @enduml

@@ -1,0 +1,64 @@
+@startuml
+!theme plain
+
+actor User
+participant GameView
+participant GameController
+participant AudioPlayer
+participant Server
+
+Server -> GameController : ROUND_START:audioId||roundNumber||option1||...||audioPath
+activate Server
+activate GameController
+
+GameController -> GameView : onRoundStart() callback
+activate GameView
+
+GameView -> GameView : Update round info, start timer
+GameView -> GameController : getResolvedAudioSource(audioPath)
+activate GameController #FFBBBB
+GameController --> GameView : file:URI (from cache)
+deactivate GameController #FFBBBB
+
+GameView -> AudioPlayer : load(file:URI)
+activate AudioPlayer
+AudioPlayer --> GameView : true/false
+GameView -> AudioPlayer : play()
+AudioPlayer --> GameView : Playback started
+deactivate AudioPlayer
+
+GameView -> User : Display options, play audio
+activate User
+
+User -> GameView : Clicks option (e.g., option 2)
+GameView -> GameController : submitAnswer(2)
+deactivate User
+
+activate GameController
+GameController -> GameView : disableOptions(), show "Submitted"
+GameController -> Server : GAME_SUBMIT:2
+deactivate GameController
+
+Server --> GameController : ROUND_RESULT:correct/wrong:points:timeMs
+activate Server
+deactivate Server
+activate GameController
+GameController -> GameView : onRoundResult() callback
+
+GameView -> GameView : Stop timer, highlight answer, display points
+
+Server --> GameController : SCORE_UPDATE:myScore:opponentScore
+activate Server
+deactivate Server
+GameController -> GameView : onScoreUpdate() callback
+GameView -> GameView : Update score display
+
+Server --> GameController : PROGRESS:myProgress:opponentProgress
+activate Server
+deactivate Server
+GameController -> GameView : onProgressUpdate() callback
+GameView -> GameView : Update round progress
+deactivate GameView
+deactivate GameController
+
+@enduml

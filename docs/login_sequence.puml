@@ -1,0 +1,25 @@
+@startuml login_sequence.puml
+autonumber
+actor User
+participant "Client (JavaFX)" as client
+participant "Server (ClientHandler)" as handler
+participant "UserService" as userService
+database "Database" as db
+
+User -> client : Nhập username & password
+client -> handler : Gửi lệnh "LOGIN:username:password"
+handler -> userService : authenticate(username, password)
+userService -> db : findByUsername(username)
+db --> userService : Trả về thông tin User
+alt Đăng nhập thành công
+    userService --> handler : Trả về đối tượng User
+    handler -> handler : Đăng ký client vào ClientManager
+    handler -> client : Gửi "LOGIN_SUCCESS:username:score"
+    handler -> client : Gửi LOBBY_UPDATE và RANKING
+    client -> User : Hiển thị màn hình Sảnh chờ (Lobby)
+else Đăng nhập thất bại
+    userService --> handler : Trả về Optional.empty()
+    handler -> client : Gửi "LOGIN_FAILED:Lý do"
+    client -> User : Hiển thị thông báo lỗi
+end
+@enduml

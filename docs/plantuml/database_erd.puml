@@ -37,13 +37,15 @@ entity Game {
   * created_at : DATETIME
   finished_at : DATETIME
   winner_id : BIGINT <<FK>>
+  preferred_artist : VARCHAR(255)
+  preferred_genre : VARCHAR(255)
 }
 
 entity GameRound {
   * id : BIGINT <<PK>>
   --
   * game_id : BIGINT <<FK>>
-  * audio_id : BIGINT <<FK>>
+  * audio_segment_id : BIGINT <<FK>>
   * round_number : INT
   player1_answer : INT
   player2_answer : INT
@@ -65,11 +67,29 @@ entity Audio {
   --
   * name : VARCHAR(255)
   * file_path : VARCHAR(500)
-  artist : VARCHAR(255)
-  genre : VARCHAR(255)
-  album : VARCHAR(255)
-  release_year : INT
-  duration_seconds : INT
+  artist_id : BIGINT <<FK>>
+  genre_id : BIGINT <<FK>>
+}
+
+entity Artist {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(255) <<UNIQUE>>
+}
+
+entity Genre {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(255) <<UNIQUE>>
+}
+
+entity AudioSegment {
+  * id : BIGINT <<PK>>
+  --
+  * audio_id : BIGINT <<FK>>
+  * start_time : INT
+  * end_time : INT
+  * file_path : VARCHAR(500)
 }
 
 ' Relationships
@@ -78,7 +98,10 @@ User ||--o{ Game : "plays as player2"
 User ||--o| Game : "wins"
 
 Game ||--o{ GameRound : "contains"
-Audio ||--o{ GameRound : "used in"
+AudioSegment ||--o{ GameRound : "used in"
+Audio ||--o{ AudioSegment : "has"
+Artist ||--o{ Audio : "has"
+Genre ||--o{ Audio : "has"
 
 note top of User
   **Primary Key:** id
@@ -100,13 +123,32 @@ note top of GameRound
   **Primary Key:** id
   **Foreign Keys:**
   - game_id → games.id
-  - audio_id → audios.id
+  - audio_segment_id → audio_segments.id
   **Indexes:** game_id, round_number
 end note
 
 note top of Audio
   **Primary Key:** id
-  **Indexes:** artist, genre
+  **Foreign Keys:**
+  - artist_id → artists.id
+  - genre_id → genres.id
+end note
+
+note top of Artist
+  **Primary Key:** id
+  **Unique:** name
+end note
+
+note top of Genre
+  **Primary Key:** id
+  **Unique:** name
+end note
+
+note top of AudioSegment
+  **Primary Key:** id
+  **Foreign Keys:**
+  - audio_id → audios.id
+  **Indexes:** audio_id
 end note
 
 @enduml

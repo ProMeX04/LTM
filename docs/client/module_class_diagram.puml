@@ -1,0 +1,294 @@
+@startuml
+!theme plain
+
+package com.promex04.model {
+  class User
+  class GameRound
+  class RankingEntry
+}
+
+package com.promex04.audio {
+  class AudioPlayer {
+    - clip: Clip
+    - audioInputStream: AudioInputStream
+    - isPlaying: AtomicBoolean
+    - onPlaybackFinished: Runnable
+    - onError: Runnable
+    + load(source: String): boolean
+    + play()
+    + stop()
+    + pause()
+    + resume()
+    + dispose()
+    + isPlaying(): boolean
+    + setOnPlaybackFinished(callback: Runnable)
+    + setOnError(callback: Runnable)
+    + getMicrosecondLength(): long
+    + getMicrosecondPosition(): long
+  }
+}
+
+package com.promex04.controller {
+  class BinaryTransferClient {
+    + receiveFile(serverHost: String, port: int, filePath: String, fileSize: long): byte[]
+  }
+
+  class GameController {
+    - socket: Socket
+    - out: PrintWriter
+    - in: BufferedReader
+    - listenerThread: Thread
+    - connected: boolean
+    - heartbeatScheduler: ScheduledExecutorService
+    - currentUsername: String
+    - currentScore: int
+    - lobbyUsers: ObservableList<User>
+    - chatMessages: ObservableList<String>
+    - rankingList: ObservableList<RankingEntry>
+    - availableArtists: ObservableList<String>
+    - availableGenres: ObservableList<String>
+    - currentRound: GameRound
+    - myScore: int
+    - opponentScore: int
+    - inGame: boolean
+    - audioCache: Map<String, String>
+    - prefetchFailedPaths: Set<String>
+    - pendingFiles: Map<String, Map<String, Object>>
+    - prefetchTotal: int
+    - prefetchCompleted: int
+    - prefetchCurrentPath: String
+    - prefetchCurrentBytes: long
+    - prefetchCurrentTotalBytes: long
+    - prefetchCurrentPercent: int
+    - prefetchLogs: ObservableList<String>
+    - onLoginSuccess: Runnable
+    - onLoginFailed: Runnable
+    - onRegisterSuccess: Runnable
+    - onRegisterFailed: Runnable
+    - onLobbyUpdate: Runnable
+    - onChatUpdate: Runnable
+    - onChallengeReceived: Runnable
+    - onChallengeSent: Runnable
+    - onChallengeRejected: Runnable
+    - onGameStart: Runnable
+    - onRoundStart: Runnable
+    - onRoundResult: Runnable
+    - onGameOver: Runnable
+    - onScoreUpdate: Runnable
+    - onProgressUpdate: Runnable
+    - onError: Runnable
+    - onRankingUpdate: Runnable
+    - onLogout: Runnable
+    - onLeftMatch: Runnable
+    - onPrefetchStart: Runnable
+    - onPrefetchDone: Runnable
+    - onPrefetchProgress: Runnable
+    - onGameReady: Runnable
+    - challengeFromUsername: String
+    - challengeToUsername: String
+    - challengeRejectedBy: String
+    - challengeArtist: String
+    - challengeGenre: String
+    - errorMessage: String
+    - gameOverMessage: String
+    - myProgress: int
+    - opponentProgress: int
+    - lastAnswerCorrect: boolean
+    - lastAnswerPoints: int
+    - lastAnswerTimeMs: long
+    - lastSelectedAnswer: int
+    + connect(serverHost: String, serverPort: int)
+    - listenToServer()
+    - handleServerMessage(message: String)
+    - handleLoginSuccess(parts: String[])
+    - handleRegisterSuccess(parts: String[])
+    - handleLobbyUpdate(parts: String[])
+    - handleChatMessage(parts: String[])
+    - handleChallengeRequest(parts: String[])
+    - handleChallengeAccepted(parts: String[])
+    - handleChallengeRejected(parts: String[])
+    - handleAudioTags(parts: String[])
+    - handleSearchArtistsResult(parts: String[])
+    - handleSearchGenresResult(parts: String[])
+    - handleChallengeSent(parts: String[])
+    - handleRoundStart(parts: String[])
+    - handlePrefetch(parts: String[])
+    - appendPrefetchLog(line: String)
+    - extractFileName(serverPath: String): String
+    - buildHttpUrl(serverPath: String): String
+    - encodePath(path: String): String
+    - normalizeServerPath(path: String): String
+    + getResolvedAudioSource(serverPath: String): String
+    + invalidateCachedAudio(serverPath: String)
+    + hasPrefetchFailures(): boolean
+    - handleRoundResult(parts: String[])
+    - handleScoreUpdate(parts: String[])
+    - handleProgress(parts: String[])
+    - handleGameOver(parts: String[])
+    - handleRanking(parts: String[])
+    - handleBinaryReady(parts: String[])
+    - handleAudioFileError(parts: String[])
+    + login(username: String, password: String)
+    + register(username: String, password: String)
+    + sendChatMessage(message: String)
+    + challenge(opponentUsername: String)
+    + challenge(opponentUsername: String, artist: String, genre: String)
+    + challenge(opponentUsername: String, artist: String, genre: String, totalRounds: int)
+    + respondToChallenge(accept: boolean)
+    + submitAnswer(answerIndex: int)
+    + leaveGame()
+    + requestRanking()
+    + requestAudioTags()
+    + searchArtists(keyword: String)
+    + searchGenres(keyword: String)
+    - buildFilterPayload(artist: String, genre: String, totalRounds: int): String
+    - parseFilterPayload(payload: String): String[]
+    - parseTotalRounds(value: String): int
+    - decodeList(payload: String): List<String>
+    - encodeComponent(value: String): String
+    - decodeComponent(value: String): String
+    - normalizePreference(value: String): String
+    - sendCommand(command: String)
+    + disconnect()
+    + isConnected(): boolean
+    + logout()
+  }
+}
+
+package com.promex04.view {
+  class LoginView {
+    - usernameField: TextField
+    - passwordField: PasswordField
+    - loginButton: Button
+    - registerButton: Button
+    - errorLabel: Label
+    - controller: GameController
+    + reset()
+  }
+
+  class LobbyView {
+    - controller: GameController
+    - userListView: ListView<User>
+    - chatListView: ListView<String>
+    - chatInputField: TextField
+    - searchField: TextField
+    - challengeButton: Button
+    - rankingTable: TableView<RankingEntry>
+    - filteredUsers: FilteredList<User>
+    - sortedUsers: SortedList<User>
+    - currentChallenger: String
+    - pendingInvitee: StringProperty
+    - userLabel: Label
+    - pendingSelectionUsername: String
+  }
+
+  class GameView {
+    - controller: GameController
+    - statusIndicator: ProgressIndicator
+    - option1Button: Button
+    - option2Button: Button
+    - option3Button: Button
+    - option4Button: Button
+    - playAudioButton: Button
+    - myPlayerNameLabel: Label
+    - myCurrentRoundLabel: Label
+    - myScoreValueLabel: Label
+    - opponentPlayerNameLabel: Label
+    - opponentCurrentRoundLabel: Label
+    - opponentScoreValueLabel: Label
+    - timerValueLabel: Label
+    - audioStatusLabel: Label
+    - loadingOverlay: VBox
+    - loadingProgressBar: ProgressBar
+    - loadingStatusLabel: Label
+    - isLoading: boolean
+    - timerTimeline: Timeline
+    - remainingSeconds: int
+    - audioPlayer: AudioPlayer
+    - statusLabel: Label
+  }
+
+  class LoadingView {
+    - controller: GameController
+    - title: Label
+    - status: Label
+    - currentFile: Label
+    - overallProgress: ProgressBar
+    - fileProgress: ProgressBar
+    - debugArea: TextArea
+    - cancelButton: Button
+  }
+
+  class GameOverView {
+    - controller: GameController
+    - headerLabel: Label
+    - myScoreLabel: Label
+    - opponentScoreLabel: Label
+    - resultLabel: Label
+    - backToLobbyButton: Button
+    + updateGameOverUI()
+    + getBackToLobbyButton(): Button
+  }
+}
+
+class ClientApplication {
+  - primaryStage: Stage
+  - controller: GameController
+  - loginView: LoginView
+  - lobbyView: LobbyView
+  - gameView: GameView
+  - loadingView: LoadingView
+  - gameOverView: GameOverView
+  - loginScene: Scene
+  - lobbyScene: Scene
+  - gameScene: Scene
+  - loadingScene: Scene
+  - gameOverScene: Scene
+  + start(primaryStage: Stage)
+  + stop()
+  + main(String[] args)
+}
+
+class ClientConfig {
+  + getDefaultHost(): String
+  + getDefaultPort(): int
+  + getDefaultHttpPort(): int
+  + getHttpBaseUrl(): String
+  + showServerFields(): boolean
+}
+
+' Relationships
+ClientApplication --> GameController
+ClientApplication --> LoginView
+ClientApplication --> LobbyView
+ClientApplication --> GameView
+ClientApplication --> LoadingView
+ClientApplication --> GameOverView
+ClientApplication ..> ClientConfig
+
+GameController --> BinaryTransferClient
+GameController --> AudioPlayer
+GameController ..> User
+GameController ..> GameRound
+GameController ..> RankingEntry
+GameController ..> ClientConfig
+
+LoginView --> GameController
+LoginView ..> ClientConfig
+
+LobbyView --> GameController
+LobbyView ..> User
+LobbyView ..> RankingEntry
+
+GameView --> GameController
+GameView --> AudioPlayer
+GameView ..> GameRound
+
+LoadingView --> GameController
+
+GameOverView --> GameController
+
+AudioPlayer ..> AudioInputStream
+AudioPlayer ..> Clip
+
+@enduml

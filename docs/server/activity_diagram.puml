@@ -1,0 +1,102 @@
+@startuml
+!theme plain
+
+start
+
+partition "User Authentication" {
+  :Client sends LOGIN/REGISTER;
+  :Server authenticates/registers user;
+  if (Successful?) then (yes)
+    :Add client to ClientManager;
+    :Send LOGIN_SUCCESS/REGISTER_SUCCESS;
+    :Broadcast Lobby Update;
+    :Broadcast Ranking;
+  else (no)
+    :Send LOGIN_FAILED/REGISTER_FAILED;
+  endif
+}
+
+partition "Lobby Management" {
+  repeat
+    :Client sends CHAT_LOBBY;
+    :Server broadcasts chat message;
+    :Client sends GET_RANKING;
+    :Server sends RANKING;
+  repeat while (User in Lobby)
+}
+
+partition "Challenge and Game Setup" {
+  :Client sends CHALLENGE to Opponent;
+  :Server checks Opponent availability;
+  if (Opponent available?) then (yes)
+    :Opponent receives CHALLENGE_REQUEST;
+    :Opponent sends CHALLENGE_RESPONSE (accept/reject);
+    if (Accepted?) then (yes)
+      :Server creates Game entity;
+      :Server sends CHALLENGE_ACCEPTED to both players;
+      :Server broadcasts Lobby Update (players now 'bận');
+      :Server generates shared audio playlist;
+      :Server sends PREFETCH list to both players;
+      :Both clients send PREFETCH_DONE;
+      :Server waits for both PREFETCH_DONE;
+      :Server starts Round 1 for both players;
+    else (no)
+      :Server sends CHALLENGE_REJECTED to both players;
+      :Server clears pending challenge state;
+    endif
+  else (no)
+    :Server sends CHALLENGE_FAILED;
+  endif
+}
+
+partition "Game Play (Asynchronous Rounds)" {
+  repeat
+    :Server sends ROUND_START to Player A;
+    :Player A starts round timer;
+    :Player A plays audio;
+    :Player A submits GAME_SUBMIT (answerIndex, timeMs) or timer expires;
+    :Server processes Player A's answer (calculate points, update GameRound);
+    :Server sends ROUND_RESULT to Player A;
+    :Server updates Player A's score cache;
+    :Server sends SCORE_UPDATE to both players (personalized);
+    :Server sends PROGRESS to both players (personalized);
+    :Player A's round number increments;
+    if (Player A finished all rounds?) then (yes)
+      :Player A is marked as finished;
+      if (Both players finished all rounds?) then (yes)
+        break
+      else (no)
+        :Player A waits for Opponent;
+      endif
+    else (no)
+      :Server schedules next round for Player A (after short delay);
+    endif
+  repeat while (Not all rounds finished by both players)
+}
+
+partition "Game End" {
+  :Server determines winner (or draw);
+  :Server updates User stats (totalScore, gamesWon, correctAnswers);
+  :Server saves Game entity (status=FINISHED);
+  :Server sends GAME_OVER to both players (personalized);
+  :Server broadcasts Lobby Update (players now 'rỗi');
+  :Server broadcasts Ranking;
+}
+
+partition "Player Forfeit" {
+  :Client sends LEAVE_GAME;
+  :Server marks player as finished;
+  :Server updates Lobby (player 'rỗi');
+  if (Opponent also finished or left?) then (yes)
+    :Server finishes Game (leaver loses);
+    :Server updates User stats;
+    :Server broadcasts Lobby Update;
+    :Server broadcasts Ranking;
+  else (no)
+    :Opponent continues playing (or waits for leaver to finish);
+  endif
+}
+
+stop
+
+@enduml

@@ -29,3 +29,11 @@ public class AudioSegment {
     private String filePath; // Đường dẫn đến file chunk đã cắt
 }
 
+
+
+
+
+
+
+
+

@@ -1,0 +1,96 @@
+@startuml
+!theme plain
+
+class User {
+  - id: Long
+  - username: String
+  - password: String
+  - totalScore: Integer
+  - correctAnswers: Integer
+  - gamesWon: Integer
+  - gamesPlayed: Integer
+}
+
+class Artist {
+  - id: Long
+  - name: String
+  - audios: List<Audio>
+}
+
+class Genre {
+  - id: Long
+  - name: String
+  - audios: List<Audio>
+}
+
+class Audio {
+  - id: Long
+  - name: String
+  - filePath: String
+  - artist: Artist
+  - genre: Genre
+  - segments: List<AudioSegment>
+}
+
+class AudioSegment {
+  - id: Long
+  - audio: Audio
+  - startTime: Integer
+  - endTime: Integer
+  - filePath: String
+}
+
+enum GameStatus {
+  WAITING
+  IN_PROGRESS
+  FINISHED
+}
+
+class Game {
+  - id: Long
+  - player1: User
+  - player2: User
+  - player1Score: Integer
+  - player2Score: Integer
+  - currentRound: Integer
+  - status: GameStatus
+  - createdAt: LocalDateTime
+  - finishedAt: LocalDateTime
+  - winner: User
+  - preferredArtist: String
+  - preferredGenre: String
+}
+
+class GameRound {
+  - id: Long
+  - game: Game
+  - audioSegment: AudioSegment
+  - roundNumber: Integer
+  - player1Answer: Integer
+  - player2Answer: Integer
+  - player1TimeMs: Long
+  - player2TimeMs: Long
+  - player1Points: Integer
+  - player2Points: Integer
+  - option1: String
+  - option2: String
+  - option3: String
+  - option4: String
+  - correctAnswer: Integer
+  - startedAt: LocalDateTime
+  - finishedAt: LocalDateTime
+}
+
+User "1" -- "*" Game : player1
+User "1" -- "*" Game : player2
+User "1" -- "0..1" Game : winner
+
+Artist "1" -- "*" Audio : artist
+Genre "1" -- "*" Audio : genre
+Audio "1" -- "*" AudioSegment : segments
+
+Game "1" -- "*" GameRound : game
+AudioSegment "1" -- "*" GameRound : audioSegment
+Game "1" -- "1" GameStatus : status
+
+@enduml

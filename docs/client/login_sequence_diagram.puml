@@ -1,0 +1,40 @@
+@startuml
+!theme plain
+
+actor User
+participant LoginView
+participant GameController
+participant Server
+
+User -> LoginView : Enters username/password
+activate User
+activate LoginView
+
+User -> LoginView : Clicks "Đăng nhập"
+LoginView -> GameController : login(username, password)
+activate GameController
+
+GameController -> GameController : connect(host, port) (if not connected)
+activate GameController #FFBBBB
+GameController -> Server : Establish Socket Connection
+activate Server
+Server --> GameController : Connection Established
+deactivate Server
+deactivate GameController #FFBBBB
+
+GameController -> Server : LOGIN:username:password
+activate Server
+
+Server --> GameController : LOGIN_SUCCESS:username:total_score
+deactivate Server
+
+GameController -> LoginView : onLoginSuccess() callback
+deactivate GameController
+
+LoginView -> LoginView : Hide error, trigger navigation
+deactivate LoginView
+
+LoginView -> User : Show LobbyView
+deactivate User
+
+@enduml

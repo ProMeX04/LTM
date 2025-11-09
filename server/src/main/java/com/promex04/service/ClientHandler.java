@@ -107,7 +107,6 @@ public class ClientHandler implements Runnable {
 
     private void handleMessage(String message) {
         logger.debug("Nhận message: {}", message);
-        // Update last heartbeat on any received message
         lastHeartbeatAt = System.currentTimeMillis();
         String[] parts = message.split(":", 3);
         if (parts.length == 0)
@@ -528,7 +527,6 @@ public class ClientHandler implements Runnable {
                         logger.info("Successfully started rounds for both players");
                     } catch (Exception e) {
                         logger.error("Error starting rounds", e);
-                        // Reset flags nếu có lỗi
                         this.roundsStarted = false;
                         if (opponentHandler != null) {
                             opponentHandler.roundsStarted = false;

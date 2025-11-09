@@ -37,13 +37,15 @@ entity "games" as games {
   * created_at : DATETIME <<NOT NULL>>
   finished_at : DATETIME <<NULL>>
   winner_id : BIGINT <<FK>> <<NULL>>
+  preferred_artist : VARCHAR(255) <<NULL>>
+  preferred_genre : VARCHAR(255) <<NULL>>
 }
 
 entity "game_rounds" as game_rounds {
   * **id** : BIGINT <<PK>> <<AUTO_INCREMENT>>
   --
   * game_id : BIGINT <<FK>> <<NOT NULL>>
-  * audio_id : BIGINT <<FK>> <<NOT NULL>>
+  * audio_segment_id : BIGINT <<FK>> <<NOT NULL>>
   * round_number : INT <<NOT NULL>>
   player1_answer : INT <<NULL>>
   player2_answer : INT <<NULL>>
@@ -65,11 +67,29 @@ entity "audios" as audios {
   --
   * name : VARCHAR(255) <<NOT NULL>>
   * file_path : VARCHAR(500) <<NOT NULL>>
-  artist : VARCHAR(255) <<NULL>>
-  genre : VARCHAR(255) <<NULL>>
-  album : VARCHAR(255) <<NULL>>
-  release_year : INT <<NULL>>
-  duration_seconds : INT <<NULL>>
+  artist_id : BIGINT <<FK>> <<NULL>>
+  genre_id : BIGINT <<FK>> <<NULL>>
+}
+
+entity "artists" as artists {
+  * **id** : BIGINT <<PK>> <<AUTO_INCREMENT>>
+  --
+  * name : VARCHAR(255) <<NOT NULL>> <<UNIQUE>>
+}
+
+entity "genres" as genres {
+  * **id** : BIGINT <<PK>> <<AUTO_INCREMENT>>
+  --
+  * name : VARCHAR(255) <<NOT NULL>> <<UNIQUE>>
+}
+
+entity "audio_segments" as audio_segments {
+  * **id** : BIGINT <<PK>> <<AUTO_INCREMENT>>
+  --
+  * audio_id : BIGINT <<FK>> <<NOT NULL>>
+  * start_time : INT <<NOT NULL>>
+  * end_time : INT <<NOT NULL>>
+  * file_path : VARCHAR(500) <<NOT NULL>>
 }
 
 ' Relationships
@@ -78,7 +98,10 @@ users ||--o{ games : "player2_id"
 users ||--o{ games : "winner_id"
 
 games ||--o{ game_rounds : "game_id"
-audios ||--o{ game_rounds : "audio_id"
+audio_segments ||--o{ game_rounds : "audio_segment_id"
+audios ||--o{ audio_segments : "audio_id"
+artists ||--o{ audios : "artist_id"
+genres ||--o{ audios : "genre_id"
 
 note right of users
   Lưu thông tin người chơi
@@ -92,7 +115,7 @@ end note
 
 note right of game_rounds
   Mỗi round thuộc một game
-  và sử dụng một audio
+  và sử dụng một audio segment
   Lưu câu trả lời và điểm
   của cả 2 người chơi
 end note
@@ -100,6 +123,23 @@ end note
 note right of audios
   Thư viện các file âm thanh
   dùng cho game
+  Liên kết với Artist và Genre
+end note
+
+note right of artists
+  Danh sách các nghệ sĩ
+  Mỗi artist có nhiều audio
+end note
+
+note right of genres
+  Danh sách các thể loại
+  Mỗi genre có nhiều audio
+end note
+
+note right of audio_segments
+  Các đoạn audio đã được cắt
+  từ file audio gốc
+  Mỗi audio có thể có nhiều segments
 end note
 
 @enduml

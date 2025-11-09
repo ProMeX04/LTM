@@ -1,0 +1,215 @@
+@startuml
+!theme plain
+
+package com.promex04.model {
+  class User
+  class Game
+  class GameRound
+  class Audio
+  class AudioSegment
+  class Artist
+  class Genre
+  enum GameStatus
+}
+
+package com.promex04.repository {
+  interface UserRepository
+  interface GameRepository
+  interface GameRoundRepository
+  interface AudioRepository
+  interface AudioSegmentRepository
+  interface ArtistRepository
+  interface GenreRepository
+}
+
+package com.promex04.service {
+  class ServerApplication {
+    + main(String[] args)
+  }
+
+  class UserService {
+    + authenticate(username, password): Optional<User>
+    + findByUsername(username): Optional<User>
+    + createUser(username, password): User
+    + getRanking(): List<User>
+    + updateUserStats(user, won, score, correctAnswers)
+    + save(user): User
+  }
+
+  class GameService {
+    + createGame(player1, player2, preferredArtist, preferredGenre): Game
+    + getRandomAudioSegment(): AudioSegment
+    + getRandomAudioSegments(n, preferredArtist, preferredGenre): List<AudioSegment>
+    + getDistinctArtists(): List<String>
+    + getDistinctGenres(): List<String>
+    + searchArtists(keyword): List<String>
+    + searchGenres(keyword): List<String>
+    + createRoundWithSegment(game, roundNumber, segment): GameRound
+    + findOrCreateRoundWithSegment(game, roundNumber, segment): GameRound
+    + processRoundAnswer(round, playerUsername, answerIndex, timeMs): RoundResult
+    + isRoundComplete(round): boolean
+    + updateGame(game): Game
+    + finishRound(round)
+    + finishGame(game): Game
+    + finishGameByForfeit(game, leaver): Game
+  }
+
+  class ClientManager {
+    + addClient(username, handler)
+    + removeClient(username)
+    + getClient(username): ClientHandler
+    + getAllClients(): Map<String, ClientHandler>
+    + getLobbyStatus(): String
+    + broadcastToLobby(message)
+    + broadcastRanking()
+    + broadcastLobbyUpdate()
+  }
+
+  class SocketServerService {
+    + startServer()
+    + stopServer()
+  }
+
+  class ClientHandler {
+    - socket: Socket
+    - clientManager: ClientManager
+    - userService: UserService
+    - gameService: GameService
+    - binaryTransferService: BinaryTransferService
+    - out: PrintWriter
+    - in: BufferedReader
+    - currentUser: User
+    - inGame: boolean
+    - currentGame: Game
+    - currentRound: GameRound
+    - roundStartTime: LocalDateTime
+    - roundTimer: ScheduledFuture<?>
+    - scheduler: ScheduledExecutorService
+    - opponentHandler: ClientHandler
+    - lastHeartbeatAt: long
+    - myRoundNumber: int
+    - myCompleted: int
+    - myFinished: boolean
+    - player1ScoreCache: int
+    - player2ScoreCache: int
+    - myPlaylist: List<AudioSegment>
+    - myPrefetchReady: boolean
+    - roundsStarted: boolean
+    - pendingArtist: String
+    - pendingGenre: String
+    - totalRounds: int
+    + run()
+    + sendMessage(message)
+    + getCurrentUser(): User
+    + isInGame(): boolean
+    + setBinaryTransferService(service)
+    - handleMessage(message)
+    - handleLogin(parts)
+    - handleRegister(parts)
+    - handleChatLobby(parts)
+    - handleChallenge(parts)
+    - handleChallengeResponse(parts)
+    - handleGameSubmit(parts)
+    - handlePrefetchDone()
+    - handleGetRanking()
+    - startNextRoundFor(target)
+    - finishPersonalRoundAndContinue()
+    - bothPlayersFinished(): boolean
+    - sendProgressToSelf()
+    - calculateDisplayRound(handler): int
+    - sendPersonalizedScoreUpdate(target)
+    - updateScoreCaches(playerUsername, points)
+    - finishGame()
+    - handleLeaveGame()
+    - handleAudioTagsRequest()
+    - handleSearchArtists(parts)
+    - handleSearchGenres(parts)
+    - handleRequestAudioFile(parts)
+    - resolvePendingArtist(): String
+    - resolvePendingGenre(): String
+    - clearPendingPreferences()
+    - buildFilterPayload(artist, genre, totalRounds): String
+    - parseFilterPayload(payload): String[]
+    - parseTotalRounds(value): int
+    - normalizePreference(value): String
+    - encodeList(values): List<String>
+    - encodeComponent(value): String
+    - decodeComponent(value): String
+    - cleanup()
+  }
+
+  class BinaryTransferService {
+    - fileCache: ConcurrentHashMap<String, FileData>
+    - binaryTransferPort: int
+    - serverSocket: ServerSocket
+    - running: boolean
+    - executorService: ExecutorService
+    + startBinaryTransferServer()
+    + registerFileForTransfer(filePath, fileData): int
+    + getNormalizedPath(filePath): String
+    + getBinaryTransferPort(): int
+    + shutdown()
+    --
+    +class FileData
+  }
+}
+
+' Relationships
+ServerApplication ..> SocketServerService
+ServerApplication ..> BinaryTransferService
+
+SocketServerService --> ClientManager
+SocketServerService --> UserService
+SocketServerService --> GameService
+SocketServerService --> BinaryTransferService
+SocketServerService ..> ClientHandler
+
+ClientHandler --> ClientManager
+ClientHandler --> UserService
+ClientHandler --> GameService
+ClientHandler --> BinaryTransferService
+ClientHandler ..> User
+ClientHandler ..> Game
+ClientHandler ..> GameRound
+ClientHandler ..> AudioSegment
+
+ClientManager --> UserService
+ClientManager ..> ClientHandler
+ClientManager ..> User
+
+UserService --> UserRepository
+UserService ..> User
+
+GameService --> GameRepository
+GameService --> GameRoundRepository
+GameService --> AudioRepository
+GameService --> AudioSegmentRepository
+GameService --> ArtistRepository
+GameService --> GenreRepository
+GameService --> UserService
+GameService ..> Game
+GameService ..> GameRound
+GameService ..> Audio
+GameService ..> AudioSegment
+GameService ..> Artist
+GameService ..> Genre
+
+BinaryTransferService ..> ClientHandler
+
+UserRepository .up.|> JpaRepository
+GameRepository .up.|> JpaRepository
+GameRoundRepository .up.|> JpaRepository
+AudioRepository .up.|> JpaRepository
+AudioSegmentRepository .up.|> JpaRepository
+ArtistRepository .up.|> JpaRepository
+GenreRepository .up.|> JpaRepository
+
+User <.. UserRepository
+Game <.. GameRepository
+GameRound <.. GameRoundRepository
+Audio <.. AudioRepository
+AudioSegment <.. AudioSegmentRepository
+Artist <.. ArtistRepository
+Genre <.. GenreRepository
+
+@enduml

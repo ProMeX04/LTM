@@ -1,0 +1,67 @@
+@startuml server_class_diagram.puml
+skinparam classAttributeIconSize 0
+
+class User {
+  - Long id
+  - String username
+  - String password
+  - Integer totalScore
+  - Integer correctAnswers
+  - Integer gamesWon
+  - Integer gamesPlayed
+}
+
+class Game {
+  - Long id
+  - User player1
+  - User player2
+  - Integer player1Score
+  - Integer player2Score
+  - GameStatus status
+  - User winner
+  - String preferredArtist
+  - String preferredGenre
+}
+
+class GameRound {
+  - Long id
+  - Integer roundNumber
+  - Integer player1Answer
+  - Integer player2Answer
+  - Integer player1Points
+  - Integer player2Points
+  - String option1..4
+  - Integer correctAnswer
+}
+
+class Audio {
+  - Long id
+  - String name
+  - String filePath
+}
+
+class AudioSegment {
+  - Long id
+  - Integer startTime
+  - Integer endTime
+  - String filePath
+}
+
+class Artist {
+ - Long id
+ - String name
+}
+
+class Genre {
+ - Long id
+ - String name
+}
+
+Game "1" -- "2" User : players
+Game "1" -- "0..*" GameRound : rounds
+GameRound "1" -- "1" AudioSegment : uses
+AudioSegment "*" -- "1" Audio : part of
+Audio "*" -- "1" Artist
+Audio "*" -- "1" Genre
+
+@enduml

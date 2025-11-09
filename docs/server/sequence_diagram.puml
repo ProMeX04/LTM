@@ -1,0 +1,125 @@
+@startuml
+!theme plain
+
+participant "Client A (Challenger)" as ClientA
+participant "Client B (Opponent)" as ClientB
+participant "ClientManager" as CM
+participant "UserService" as US
+participant "GameService" as GS
+participant "BinaryTransferService" as BTS
+database "Database" as DB
+
+ClientA -> CM : CHALLENGE:opponentUsername:artist:genre:rounds
+activate ClientA
+activate CM
+
+CM -> CM : getClient(opponentUsername)
+CM -> ClientB : CHALLENGE_REQUEST:challengerUsername:artist:genre:rounds
+activate ClientB
+
+ClientB -> ClientB : (User accepts/rejects)
+ClientB -> CM : CHALLENGE_RESPONSE:accept
+deactivate ClientB
+
+CM -> US : authenticate(challenger, accepter)
+activate US
+US -> DB : find User entities
+activate DB
+DB --> US : User entities
+deactivate DB
+US --> CM : User entities
+deactivate US
+
+CM -> GS : createGame(challenger, accepter, artist, genre)
+activate GS
+GS -> DB : save Game entity (status=IN_PROGRESS)
+DB --> GS : Game entity
+deactivate DB
+GS --> CM : Game entity
+deactivate GS
+
+CM -> ClientA : CHALLENGE_ACCEPTED:opponentUsername
+CM -> ClientB : CHALLENGE_ACCEPTED:challengerUsername
+
+CM -> CM : broadcastLobbyUpdate()
+CM -> ClientA : LOBBY_UPDATE (A is 'bận')
+CM -> ClientB : LOBBY_UPDATE (B is 'bận')
+
+CM -> GS : getRandomAudioSegments(totalRounds, artist, genre)
+activate GS
+GS -> DB : retrieve AudioSegments
+DB --> GS : List<AudioSegment>
+deactivate DB
+GS --> CM : List<AudioSegment>
+deactivate GS
+
+CM -> ClientA : PREFETCH:filePath1;filePath2;...
+CM -> ClientB : PREFETCH:filePath1;filePath2;...
+
+ClientA -> CM : PREFETCH_DONE
+ClientB -> CM : PREFETCH_DONE
+
+CM -> CM : (Wait for both PREFETCH_DONE)
+
+loop for each round (1 to totalRounds)
+  CM -> GS : findOrCreateRoundWithSegment(game, roundNumber, segment)
+  activate GS
+  GS -> DB : check/create GameRound
+  DB --> GS : GameRound entity
+  deactivate DB
+  GS --> CM : GameRound entity
+
+  CM -> ClientA : ROUND_START:audioId||roundNumber||option1||...||audioPath
+  CM -> ClientB : ROUND_START:audioId||roundNumber||option1||...||audioPath
+
+  ClientA -> CM : GAME_SUBMIT:answerIndex
+  activate ClientA
+  CM -> GS : processRoundAnswer(round, playerA, answerIndex, timeMs)
+  activate GS
+  GS -> DB : update GameRound, Game, User stats
+  DB --> GS
+  deactivate DB
+  GS --> CM : RoundResult
+  deactivate GS
+  CM -> ClientA : ROUND_RESULT:correct/wrong:points:timeMs
+  CM -> ClientA : SCORE_UPDATE:myScore:opponentScore
+  CM -> ClientB : SCORE_UPDATE:opponentScore:myScore
+  CM -> ClientA : PROGRESS:myProgress:opponentProgress
+  CM -> ClientB : PROGRESS:opponentProgress:myProgress
+  deactivate ClientA
+
+  ClientB -> CM : GAME_SUBMIT:answerIndex
+  activate ClientB
+  CM -> GS : processRoundAnswer(round, playerB, answerIndex, timeMs)
+  activate GS
+  GS -> DB : update GameRound, Game, User stats
+  DB --> GS
+  deactivate DB
+  GS --> CM : RoundResult
+  deactivate GS
+  CM -> ClientB : ROUND_RESULT:correct/wrong:points:timeMs
+  CM -> ClientA : SCORE_UPDATE:myScore:opponentScore
+  CM -> ClientB : SCORE_UPDATE:opponentScore:myScore
+  CM -> ClientA : PROGRESS:myProgress:opponentProgress
+  CM -> ClientB : PROGRESS:opponentProgress:myProgress
+  deactivate ClientB
+end
+
+CM -> GS : finishGame(game)
+activate GS
+GS -> DB : update Game, User stats
+DB --> GS
+deactivate DB
+GS --> CM : Finished Game
+
+CM -> ClientA : GAME_OVER:myScore:opponentScore:winner
+CM -> ClientB : GAME_OVER:myScore:opponentScore:winner
+
+CM -> CM : broadcastLobbyUpdate()
+CM -> CM : broadcastRanking()
+
+deactivate CM
+deactivate ClientA
+deactivate ClientB
+
+@enduml

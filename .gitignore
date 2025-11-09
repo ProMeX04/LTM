@@ -41,7 +41,9 @@ out/
 .project
 .settings/
 bin/
-
+.vscode/
+.gitignore
+.git/
 # IDE - VS Code
 .vscode/
 *.code-workspace
@@ -71,4 +73,5 @@ local.properties
 
 # Application specific - Audio files
 *.mp3
+*.png
 

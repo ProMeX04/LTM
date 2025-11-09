@@ -32,6 +32,8 @@ package "com.promex04.model" {
     -LocalDateTime createdAt
     -LocalDateTime finishedAt
     -User winner
+    -String preferredArtist
+    -String preferredGenre
     --
     +enum GameStatus
   }
@@ -39,7 +41,7 @@ package "com.promex04.model" {
   class GameRound {
     -Long id
     -Game game
-    -Audio audio
+    -AudioSegment audioSegment
     -Integer roundNumber
     -Integer player1Answer
     -Integer player2Answer
@@ -60,11 +62,29 @@ package "com.promex04.model" {
     -Long id
     -String name
     -String filePath
-    -String artist
-    -String genre
-    -String album
-    -Integer releaseYear
-    -Integer durationSeconds
+    -Artist artist
+    -Genre genre
+    -List<AudioSegment> segments
+  }
+
+  class Artist {
+    -Long id
+    -String name
+    -List<Audio> audios
+  }
+
+  class Genre {
+    -Long id
+    -String name
+    -List<Audio> audios
+  }
+
+  class AudioSegment {
+    -Long id
+    -Audio audio
+    -Integer startTime
+    -Integer endTime
+    -String filePath
   }
 }
 
@@ -78,6 +98,7 @@ package "com.promex04.repository" {
   interface GameRepository {
     +Game save(Game game)
     +Optional<Game> findById(Long id)
+    +List<Game> findByPlayer1UsernameOrPlayer2Username(String player1, String player2)
   }
 
   interface GameRoundRepository {
@@ -90,6 +111,21 @@ package "com.promex04.repository" {
   interface AudioRepository {
     +List<Audio> findAll()
     +Audio save(Audio audio)
+  }
+
+  interface ArtistRepository {
+    +Optional<Artist> findByName(String name)
+    +List<Artist> searchByName(String keyword)
+  }
+
+  interface GenreRepository {
+    +Optional<Genre> findByName(String name)
+    +List<Genre> searchByName(String keyword)
+  }
+
+  interface AudioSegmentRepository {
+    +List<AudioSegment> findByAudioId(Long audioId)
+    +List<AudioSegment> findAllWithAudio()
   }
 }
 
@@ -108,12 +144,22 @@ package "com.promex04.service" {
     -GameRepository gameRepository
     -GameRoundRepository gameRoundRepository
     -AudioRepository audioRepository
+    -AudioSegmentRepository audioSegmentRepository
+    -ArtistRepository artistRepository
+    -GenreRepository genreRepository
     -UserService userService
     +Game createGame(User player1, User player2)
-    +Audio getRandomAudio()
-    +List<Audio> getRandomAudios(int n, String artist, String genre)
+    +Game createGame(User player1, User player2, String preferredArtist, String preferredGenre)
+    +AudioSegment getRandomAudioSegment()
+    +List<AudioSegment> getRandomAudioSegments(int n)
+    +List<AudioSegment> getRandomAudioSegments(int n, String preferredArtist, String preferredGenre)
+    +List<String> getDistinctArtists()
+    +List<String> getDistinctGenres()
+    +List<String> searchArtists(String keyword)
+    +List<String> searchGenres(String keyword)
     +GameRound createRound(Game game, int roundNumber)
-    +GameRound findOrCreateRoundWithAudio(Game game, int roundNumber, Audio audio)
+    +GameRound createRoundWithSegment(Game game, int roundNumber, AudioSegment segment)
+    +GameRound findOrCreateRoundWithSegment(Game game, int roundNumber, AudioSegment segment)
     +RoundResult processRoundAnswer(GameRound round, String playerUsername, int answerIndex, long timeMs)
     +boolean isRoundComplete(GameRound round)
     +Game finishGame(Game game)
@@ -160,10 +206,14 @@ package "com.promex04.service" {
   }
 
   class BinaryTransferService {
-    -Map<String, FileData> registeredFiles
-    -int binaryPort
+    -ConcurrentHashMap<String, FileData> fileCache
+    -int binaryTransferPort
+    -ServerSocket serverSocket
+    -ExecutorService executorService
+    +void startBinaryTransferServer()
     +int registerFileForTransfer(String filePath, byte[] fileData)
-    +byte[] getFileData(String filePath)
+    +int getBinaryTransferPort()
+    +String getNormalizedPath(String filePath)
     --
     +class FileData
   }
@@ -174,21 +224,31 @@ User "1" -- "*" Game : player1
 User "1" -- "*" Game : player2
 User "1" -- "*" Game : winner
 Game "1" -- "*" GameRound
-GameRound "1" -- "1" Audio
+GameRound "1" -- "1" AudioSegment
+AudioSegment "N" -- "1" Audio
+Audio "N" -- "1" Artist
+Audio "N" -- "1" Genre
 
 UserRepository ..|> User : manages
 GameRepository ..|> Game : manages
 GameRoundRepository ..|> GameRound : manages
 AudioRepository ..|> Audio : manages
+ArtistRepository ..|> Artist : manages
+GenreRepository ..|> Genre : manages
+AudioSegmentRepository ..|> AudioSegment : manages
 
 UserService --> UserRepository : uses
 GameService --> GameRepository : uses
 GameService --> GameRoundRepository : uses
 GameService --> AudioRepository : uses
+GameService --> AudioSegmentRepository : uses
+GameService --> ArtistRepository : uses
+GameService --> GenreRepository : uses
 GameService --> UserService : uses
 
 ClientHandler --> UserService : uses
 ClientHandler --> GameService : uses
+ClientHandler --> BinaryTransferService : uses
 ClientHandler --> ClientManager : uses
 ClientHandler --> User : currentUser
 ClientHandler --> Game : currentGame

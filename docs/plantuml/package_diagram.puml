@@ -43,6 +43,9 @@ package "com.promex04.server" {
     [Game]
     [GameRound]
     [Audio]
+    [Artist]
+    [Genre]
+    [AudioSegment]
   }
   
   package "repository" {
@@ -50,6 +53,9 @@ package "com.promex04.server" {
     [GameRepository]
     [GameRoundRepository]
     [AudioRepository]
+    [ArtistRepository]
+    [GenreRepository]
+    [AudioSegmentRepository]
   }
   
   package "service" {
@@ -76,6 +82,7 @@ package "com.promex04.server" {
 [service] --> [repository]
 [service] --> [model]
 [repository] --> [model]
+[model] --> [model] : relationships
 
 [controller] ..> [service] : communicates via\nSocket protocol
 

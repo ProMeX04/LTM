@@ -1,0 +1,14 @@
+@startuml component_diagram
+skinparam componentStyle uml2
+
+package "Game Đoán Âm Thanh" {
+  [Client (JavaFX)] as client
+  [Server (Spring Boot)] as server
+  database "Database (MySQL)" as db
+
+  client --> server : "Giao tiếp qua TCP Socket
+Giao thức dạng text"
+  server --> db : "JPA / JDBC"
+}
+
+@enduml

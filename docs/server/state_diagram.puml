@@ -1,0 +1,11 @@
+@startuml
+!theme plain
+
+state "Game Status" as GameState {
+  [*] --> WAITING : Game Created
+  WAITING --> IN_PROGRESS : Challenge Accepted
+  IN_PROGRESS --> FINISHED : All Rounds Complete
+  IN_PROGRESS --> FINISHED : Player Forfeits
+}
+
+@enduml

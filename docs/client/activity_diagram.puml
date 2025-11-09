@@ -1,0 +1,103 @@
+@startuml
+!theme plain
+
+start
+
+:ClientApplication starts;
+:Initialize GameController and Views;
+:Setup Navigation Callbacks;
+:Show LoginView;
+
+partition "Login/Register" {
+  repeat
+    :User enters credentials;
+    if (Login Button Clicked) then (Login)
+      :GameController.login(username, password);
+      :Server responds LOGIN_SUCCESS/LOGIN_FAILED;
+      if (LOGIN_SUCCESS) then (Success)
+        break
+      else (Failed)
+        :Display error message;
+      endif
+    else (Register Button Clicked)
+      :GameController.register(username, password);
+      :Server responds REGISTER_SUCCESS/REGISTER_FAILED;
+      if (REGISTER_SUCCESS) then (Success)
+        break
+      else (Failed)
+        :Display error message;
+      endif
+    endif
+  repeat while (Login/Register Failed)
+  :Show LobbyView;
+}
+
+partition "Lobby Interaction" {
+  repeat
+    :Display online users, chat, ranking;
+    if (User sends chat message) then (Send Chat)
+      :GameController.sendChatMessage(message);
+    elseif (User requests ranking) then (Request Ranking)
+      :GameController.requestRanking();
+    elseif (User selects opponent and clicks Challenge) then (Challenge)
+      :GameController.challenge(opponentUsername, artist, genre, rounds);
+      :Server responds CHALLENGE_SENT/CHALLENGE_FAILED;
+      if (CHALLENGE_SENT) then (Sent)
+        :Display "Waiting for opponent";
+      else (Failed)
+        :Display error;
+      endif
+    elseif (User receives CHALLENGE_REQUEST) then (Receive Challenge)
+      :Display challenge dialog;
+      if (User accepts) then (Accept)
+        :GameController.respondToChallenge(true);
+        break
+      else (Reject)
+        :GameController.respondToChallenge(false);
+      endif
+    elseif (User clicks Logout) then (Logout)
+      :GameController.logout();
+      :Show LoginView;
+      stop
+    endif
+  repeat while (Not in Game)
+  :Show GameView (with Loading Overlay);
+}
+
+partition "Game Play" {
+  :GameController.onGameStart() callback;
+  :GameView shows loading overlay;
+  :GameController.onPrefetchStart() callback;
+  :GameView updates prefetch progress;
+  :GameController.onPrefetchDone() callback;
+  :GameView hides loading overlay when onGameReady() is called;
+
+  repeat
+    :GameController.onRoundStart() callback;
+    :GameView updates round info, plays audio, starts timer;
+    if (User submits answer) then (Submit Answer)
+      :GameController.submitAnswer(answerIndex);
+      :GameView disables options, shows "Submitted";
+    else (Timer expires)
+      :GameView disables options, shows "Time out!";
+    endif
+    :GameController.onRoundResult() callback;
+    :GameView highlights answer, displays points;
+    :GameController.onScoreUpdate() callback;
+    :GameView updates scores;
+    :GameController.onProgressUpdate() callback;
+    :GameView updates round progress;
+  repeat while (Game not over)
+}
+
+partition "Game Over" {
+  :GameController.onGameOver() callback;
+  :Show GameOverView;
+  :GameOverView updates final scores and winner;
+  if (User clicks "Back to Lobby") then (Back to Lobby)
+    :Show LobbyView;
+    detach
+  endif
+}
+
+@enduml

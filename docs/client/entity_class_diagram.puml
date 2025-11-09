@@ -1,0 +1,30 @@
+@startuml
+!theme plain
+
+class User {
+  - username: String
+  - totalScore: int
+  - status: String
+}
+
+class GameRound {
+  - audioId: Long
+  - roundNumber: int
+  - option1: String
+  - option2: String
+  - option3: String
+  - option4: String
+  - audioFilePath: String
+  - startTime: long
+  + getElapsedTimeMs(): long
+}
+
+class RankingEntry {
+  - rank: int
+  - username: String
+  - totalScore: int
+  - correctAnswers: int
+  - gamesWon: int
+}
+
+@enduml

@@ -1,0 +1,12 @@
+@startuml
+!theme plain
+
+state "GameController Connection" as ConnectionState {
+  [*] --> Disconnected : Initial State
+  Disconnected --> Connecting : connect()
+  Connecting --> Connected : Socket Connected
+  Connecting --> Disconnected : Connection Failed
+  Connected --> Disconnected : disconnect() / Network Error
+}
+
+@enduml

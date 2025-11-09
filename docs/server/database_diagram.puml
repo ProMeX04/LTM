@@ -1,0 +1,97 @@
+@startuml
+!theme plain
+
+entity User {
+  + id: Long
+  --
+  username: String <<unique>>
+  password: String
+  total_score: Integer
+  correct_answers: Integer
+  games_won: Integer
+  games_played: Integer
+}
+
+entity Artist {
+  + id: Long
+  --
+  name: String <<unique>>
+}
+
+entity Genre {
+  + id: Long
+  --
+  name: String <<unique>>
+}
+
+entity Audio {
+  + id: Long
+  --
+  name: String
+  file_path: String
+  --
+  artist_id: Long <<FK>>
+  genre_id: Long <<FK>>
+}
+
+entity AudioSegment {
+  + id: Long
+  --
+  start_time: Integer
+  end_time: Integer
+  file_path: String
+  --
+  audio_id: Long <<FK>>
+}
+
+entity Game {
+  + id: Long
+  --
+  player1_score: Integer
+  player2_score: Integer
+  current_round: Integer
+  status: GameStatus
+  created_at: LocalDateTime
+  finished_at: LocalDateTime
+  preferred_artist: String
+  preferred_genre: String
+  --
+  player1_id: Long <<FK>>
+  player2_id: Long <<FK>>
+  winner_id: Long <<FK>>
+}
+
+entity GameRound {
+  + id: Long
+  --
+  round_number: Integer
+  player1_answer: Integer
+  player2_answer: Integer
+  player1_time_ms: Long
+  player2_time_ms: Long
+  player1_points: Integer
+  player2_points: Integer
+  option1: String
+  option2: String
+  option3: String
+  option4: String
+  correct_answer: Integer
+  started_at: LocalDateTime
+  finished_at: LocalDateTime
+  --
+  game_id: Long <<FK>>
+  audio_segment_id: Long <<FK>>
+}
+
+User ||--o{ Game : player1_id
+User ||--o{ Game : player2_id
+User }o--o{ Game : winner_id
+
+Artist ||--o{ Audio : artist_id
+Genre ||--o{ Audio : genre_id
+Audio ||--o{ AudioSegment : audio_id
+
+Game ||--o{ GameRound : game_id
+AudioSegment ||--o{ GameRound : audio_segment_id
+
+@enduml

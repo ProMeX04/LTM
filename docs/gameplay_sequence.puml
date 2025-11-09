@@ -1,0 +1,60 @@
+@startuml gameplay_sequence.puml
+autonumber
+actor "Người chơi 1" as p1
+participant "Client 1" as c1
+participant "Server" as server
+participant "Client 2" as c2
+actor "Người chơi 2" as p2
+
+== Thách đấu ==
+p1 -> c1 : Chọn Người chơi 2 và nhấn "Thách đấu"
+c1 -> server : Gửi "CHALLENGE:player2_username:preferences"
+server -> c2 : Gửi "CHALLENGE_REQUEST:player1_username:preferences"
+p2 -> c2 : Nhấn "Chấp nhận"
+c2 -> server : Gửi "CHALLENGE_RESPONSE:accept"
+
+== Bắt đầu Game ==
+server -> server : gameService.createGame(p1, p2)
+server -> c1 : Gửi "CHALLENGE_ACCEPTED"
+server -> c2 : Gửi "CHALLENGE_ACCEPTED"
+server -> server : Cập nhật trạng thái "bận" cho 2 người chơi
+server -> server : broadcastLobbyUpdate() cho tất cả client khác
+
+== Tải trước Audio (Prefetch) ==
+server -> c1 : Gửi "PREFETCH:audio_path_1;audio_path_2;..."
+server -> c2 : Gửi "PREFETCH:audio_path_1;audio_path_2;..."
+c1 -> server : Tải file và gửi "PREFETCH_DONE"
+c2 -> server : Tải file và gửi "PREFETCH_DONE"
+
+== Bắt đầu Ván đấu (Round) ==
+loop 10 ván
+    server -> c1 : Gửi "ROUND_START:data"
+    server -> c2 : Gửi "ROUND_START:data"
+    c1 -> p1 : Phát âm thanh và hiển thị lựa chọn
+    c2 -> p2 : Phát âm thanh và hiển thị lựa chọn
+
+    alt Người chơi 1 trả lời trước
+        p1 -> c1 : Chọn đáp án
+        c1 -> server : Gửi "GAME_SUBMIT:answer_index"
+        server -> server : gameService.processRoundAnswer(p1, ...)
+        server -> c1 : Gửi "ROUND_RESULT:correct/wrong:points"
+        server -> c1 : Gửi "SCORE_UPDATE:my_score:opponent_score"
+        server -> c2 : Gửi "SCORE_UPDATE:my_score:opponent_score"
+    end
+
+    p2 -> c2 : Chọn đáp án
+    c2 -> server : Gửi "GAME_SUBMIT:answer_index"
+    server -> server : gameService.processRoundAnswer(p2, ...)
+    server -> c2 : Gửi "ROUND_RESULT:correct/wrong:points"
+    server -> c1 : Gửi "SCORE_UPDATE:my_score:opponent_score"
+    server -> c2 : Gửi "SCORE_UPDATE:my_score:opponent_score"
+end
+
+== Kết thúc Game ==
+server -> server : gameService.finishGame()
+server -> server : Cập nhật điểm và xếp hạng
+server -> c1 : Gửi "GAME_OVER:p1_score:p2_score:winner"
+server -> c2 : Gửi "GAME_OVER:p2_score:p1_score:winner"
+server -> server : Cập nhật trạng thái "rỗi"
+server -> server : broadcastLobbyUpdate() và broadcastRanking()
+@enduml
