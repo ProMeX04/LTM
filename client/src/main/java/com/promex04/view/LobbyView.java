@@ -238,10 +238,13 @@ public class LobbyView extends BorderPane {
         rankCol.setMaxWidth(150);
         rankCol.setMinWidth(100);
 
+        TableColumn<com.promex04.model.RankingEntry, String> usernameCol = new TableColumn<>("Người chơi");
+        usernameCol.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getUsername()));
+
         TableColumn<com.promex04.model.RankingEntry, Number> winCol = new TableColumn<>("Số trận thắng");
         winCol.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getGamesWon()));
 
-        rankingTable.getColumns().addAll(rankCol, winCol);
+        rankingTable.getColumns().addAll(rankCol, usernameCol, winCol);
 
         rightBox.getChildren().addAll(rankingLabel, rankingTable);
         setRight(rightBox);
@@ -378,7 +381,8 @@ public class LobbyView extends BorderPane {
             return;
         }
 
-        // Lưu lại username để restore selection sau khi dialog đóng và sau các lần refresh
+        // Lưu lại username để restore selection sau khi dialog đóng và sau các lần
+        // refresh
         String selectedUsername = selectedUser.getUsername();
         pendingSelectionUsername = selectedUsername;
 
@@ -397,7 +401,8 @@ public class LobbyView extends BorderPane {
     }
 
     private void restoreSelection(String username) {
-        if (username == null) return;
+        if (username == null)
+            return;
         // Tìm lại user trong danh sách và restore selection
         // Sử dụng Platform.runLater với delay nhỏ để đảm bảo refresh đã hoàn tất
         Platform.runLater(() -> {
@@ -412,7 +417,7 @@ public class LobbyView extends BorderPane {
                         break;
                     }
                 }
-                
+
                 if (userToSelect != null) {
                     userListView.getSelectionModel().select(userToSelect);
                     // Scroll đến item được chọn để đảm bảo nó hiển thị
@@ -442,20 +447,20 @@ public class LobbyView extends BorderPane {
 
         // Load danh sách khi mở dialog
         controller.requestAudioTags();
-        
+
         // === CHỌN CA SĨ ===
         Label artistLabel = new Label("Ca sĩ:");
         artistLabel.setStyle("-fx-font-size: 13px;");
-        
+
         TextField artistSearchField = new TextField();
         artistSearchField.setPromptText("Tìm kiếm ca sĩ...");
         artistSearchField.setPrefHeight(32);
-        
+
         FilteredList<String> filteredArtists = new FilteredList<>(controller.getAvailableArtists(), p -> true);
         ListView<String> artistListView = new ListView<>(filteredArtists);
         artistListView.setPrefHeight(120);
         artistListView.setStyle("-fx-background-insets: 0; -fx-padding: 4;");
-        
+
         // Filter danh sách dựa trên ô search
         artistSearchField.textProperty().addListener((obs, oldVal, newVal) -> {
             String filterText = newVal != null ? newVal.toLowerCase() : "";
@@ -466,12 +471,12 @@ public class LobbyView extends BorderPane {
                 return item != null && item.toLowerCase().contains(filterText);
             });
         });
-        
+
         // Label hiển thị giá trị đã chọn
         Label selectedArtistLabel = new Label("Chưa chọn");
         selectedArtistLabel.setStyle("-fx-font-size: 12px; -fx-padding: 4 0;");
         selectedArtistLabel.setWrapText(true);
-        
+
         // Cập nhật label khi chọn
         artistListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
@@ -480,22 +485,22 @@ public class LobbyView extends BorderPane {
                 selectedArtistLabel.setText("Chưa chọn");
             }
         });
-        
+
         VBox artistBox = new VBox(6, artistLabel, artistSearchField, artistListView, selectedArtistLabel);
-        
+
         // === CHỌN THỂ LOẠI ===
         Label genreLabel = new Label("Thể loại:");
         genreLabel.setStyle("-fx-font-size: 13px;");
-        
+
         TextField genreSearchField = new TextField();
         genreSearchField.setPromptText("Tìm kiếm thể loại...");
         genreSearchField.setPrefHeight(32);
-        
+
         FilteredList<String> filteredGenres = new FilteredList<>(controller.getAvailableGenres(), p -> true);
         ListView<String> genreListView = new ListView<>(filteredGenres);
         genreListView.setPrefHeight(120);
         genreListView.setStyle("-fx-background-insets: 0; -fx-padding: 4;");
-        
+
         // Filter danh sách dựa trên ô search
         genreSearchField.textProperty().addListener((obs, oldVal, newVal) -> {
             String filterText = newVal != null ? newVal.toLowerCase() : "";
@@ -506,12 +511,12 @@ public class LobbyView extends BorderPane {
                 return item != null && item.toLowerCase().contains(filterText);
             });
         });
-        
+
         // Label hiển thị giá trị đã chọn
         Label selectedGenreLabel = new Label("Chưa chọn");
         selectedGenreLabel.setStyle("-fx-font-size: 12px; -fx-padding: 4 0;");
         selectedGenreLabel.setWrapText(true);
-        
+
         // Cập nhật label khi chọn
         genreListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
@@ -520,7 +525,7 @@ public class LobbyView extends BorderPane {
                 selectedGenreLabel.setText("Chưa chọn");
             }
         });
-        
+
         VBox genreBox = new VBox(6, genreLabel, genreSearchField, genreListView, selectedGenreLabel);
 
         Spinner<Integer> roundsSpinner = new Spinner<>(5, 50, 15, 5);

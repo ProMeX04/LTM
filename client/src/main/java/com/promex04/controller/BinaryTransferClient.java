@@ -8,7 +8,6 @@ import java.net.Socket;
  * Kết nối đến port được server cung cấp và nhận file data
  */
 public class BinaryTransferClient {
-    
     /**
      * Nhận file từ server qua socket cố định
      * @param serverHost Host của server
